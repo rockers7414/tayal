@@ -1,8 +1,7 @@
-const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
 
 const Response = require('../objects/response');
-const Error = require('../objects/errors');
+const Error = require('../objects/error');
 
 router.get('/object', (req, res) => {
   const result = new Response.Data('data');
