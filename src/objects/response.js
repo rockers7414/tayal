@@ -8,12 +8,13 @@ class Response {
 }
 
 class Collection extends Response {
-  constructor(data, index, offset) {
+  constructor(data, index, offset, total) {
     super(data, null);
 
     this.type = 'collection';
     this.index = index;
     this.offset = offset;
+    this.total = total;
   }
 }
 
