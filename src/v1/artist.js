@@ -4,8 +4,10 @@ const Response = require('../objects/response');
 const Artist = require('../modules/artist');
 
 router.get('/', (req, res) => {
-  Artist.getArtists().then(artists => {
-    res.send(new Response.Collection(artists, 0, artists.length, artists.length));
+  const index = req.query.index ? parseInt(req.query.index) : 0;
+  const offset = req.query.offset ? parseInt(req.query.offset) : 50;
+  Artist.getArtists(index, offset).then(page => {
+    res.send(new Response.Collection(page.data, page.index, page.offset, page.total));
   });
 });
 

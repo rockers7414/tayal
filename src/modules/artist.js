@@ -1,6 +1,7 @@
 'use strict';
 const Database = require('../lib/database');
 const ObjectID = require('mongodb').ObjectID;
+const Page = require('../objects/page');
 
 class Artist {
   constructor(name, albums = [], images = []) {
@@ -28,9 +29,18 @@ class Artist {
       });
   }
 
-  static getArtists() {
+  static getArtists(index = 0, offset = 50) {
     return Database.getCollection('artists')
-      .then(collection => collection.find().toArray());
+      .then(collection => {
+        return new Promise((resolve, reject) => {
+          collection.find().skip(index).limit(offset).toArray((err, data) => {
+            if (err) {
+              reject(err);
+            }
+            resolve(new Page(index, offset, data, data.length));
+          });
+        });
+      });
   }
 
   static getArtist(id) {
