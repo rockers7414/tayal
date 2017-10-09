@@ -33,4 +33,10 @@ router.put('/:id', (req, res) => {
     });
 });
 
+router.delete('/:id', (req, res) => {
+  Artist.deleteArtist(req.params.id).then(result => {
+    res.send(new Response.Data(result));
+  });
+});
+
 module.exports = router;
