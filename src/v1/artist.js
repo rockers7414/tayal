@@ -23,4 +23,14 @@ router.get('/:id', (req, res) => {
   });
 });
 
+router.put('/:id', (req, res) => {
+  Artist.getArtist(req.params.id)
+    .then(artist => {
+      artist.name = req.body.name;
+      return artist.save();
+    }).then(artist => {
+      res.send(new Response.Data(artist));
+    });
+});
+
 module.exports = router;

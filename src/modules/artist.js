@@ -14,17 +14,24 @@ class Artist {
     return Database.getCollection('artists')
       .then(collection => {
         return new Promise((resolve, reject) => {
-          collection.insertOne(this, (err, res) => {
-            if (err) {
-              reject(err);
-            }
+          collection.updateOne({_id: new ObjectID(this._id)},
+            this,
+            {upsert: true},
+            (err, res) => {
+              if (err) {
+                reject(err);
+              }
 
-            if (!res.insertedCount) {
-              resolve(null);
-            }
+              if (!res.matchedCount && !res.upsertedCount) {
+                resolve(null);
+              }
 
-            resolve(this);
-          });
+              if (!this._id) {
+                this._id = res.result.upserted[0]._id.toString();
+              }
+
+              resolve(this);
+            });
         });
       });
   }
@@ -37,7 +44,14 @@ class Artist {
             if (err) {
               reject(err);
             }
-            resolve(new Page(index, offset, data, data.length));
+
+            const artists = data.map(data => {
+              const artist = new Artist(data.name, data.albums, data.images);
+              artist._id = data._id;
+              return artist;
+            });
+
+            resolve(new Page(index, offset, artists, data.length));
           });
         });
       });
@@ -45,7 +59,12 @@ class Artist {
 
   static getArtist(id) {
     return Database.getCollection('artists')
-      .then(collection => collection.findOne({_id: new ObjectID(id)}));
+      .then(collection => collection.findOne({_id: new ObjectID(id)}))
+      .then(data => {
+        const artist = new Artist(data.name, data.albums, data.images);
+        artist._id = data._id;
+        return artist;
+      });
   }
 }
 
