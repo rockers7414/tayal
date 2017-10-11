@@ -28,6 +28,7 @@ router.put('/:id', (req, res) => {
   Artist.getArtist(req.params.id)
     .then(artist => {
       artist.name = req.body.name;
+      artist.albums = req.body.albums || [];
       return artist.save();
     }).then(artist => {
       res.send(new Response.Data(artist));
@@ -35,9 +36,9 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  Artist.deleteArtist(req.params.id).then(result => {
-    res.send(new Response.Data(result));
-  });
+  Artist.deleteArtist(req.params.id)
+    .then(result => res.send(new Response.Data(result)))
+    .catch(e => res.send(new Response.Error(e)));
 });
 
 router.post('/:id/albums', (req, res) => {

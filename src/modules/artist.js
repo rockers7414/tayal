@@ -2,6 +2,7 @@
 const Database = require('../lib/database');
 const ObjectID = require('mongodb').ObjectID;
 const Page = require('../objects/page');
+const Error = require('../objects/error');
 
 class Artist {
   static getArtists(index = 0, offset = 50) {
@@ -36,9 +37,15 @@ class Artist {
   }
 
   static deleteArtist(id) {
-    return Database.getCollection('artists')
-      .then(collection => collection.deleteOne({_id: new ObjectID(id)}))
-      .then(result => result.deletedCount == 1);
+    return Artist.getArtist(id).then(artist => {
+      if (artist.albums.length > 0) {
+        throw new Error.UnremovableError('has related albums');
+      }
+
+      return Database.getCollection('artists')
+        .then(collection => collection.deleteOne({_id: new ObjectID(id)}))
+        .then(result => result.deletedCount == 1);
+    });
   }
 
   constructor(name, albums = [], images = []) {

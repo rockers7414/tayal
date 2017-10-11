@@ -8,6 +8,14 @@ class InvalidParam {
   }
 }
 
+class UnremovableError {
+  constructor(reason) {
+    this.status = 5000;
+    this.err_msg = 'The entity is unremovable.(' + reason + ')';
+  }
+}
+
 module.exports = {
-  InvalidParam: InvalidParam
+  InvalidParam: InvalidParam,
+  UnremovableError: UnremovableError
 };
