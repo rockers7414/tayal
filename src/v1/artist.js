@@ -2,6 +2,7 @@ const router = require('express').Router();
 
 const Response = require('../objects/response');
 const Artist = require('../modules/artist');
+const Album = require('../modules/album');
 
 router.get('/', (req, res) => {
   const index = req.query.index ? parseInt(req.query.index) : 0;
@@ -27,6 +28,7 @@ router.put('/:id', (req, res) => {
   Artist.getArtist(req.params.id)
     .then(artist => {
       artist.name = req.body.name;
+      artist.albums = req.body.albums || [];
       return artist.save();
     }).then(artist => {
       res.send(new Response.Data(artist));
@@ -34,9 +36,20 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  Artist.deleteArtist(req.params.id).then(result => {
-    res.send(new Response.Data(result));
-  });
+  Artist.deleteArtist(req.params.id)
+    .then(result => res.send(new Response.Data(result)))
+    .catch(e => res.send(new Response.Error(e)));
+});
+
+router.post('/:id/albums', (req, res) => {
+  Artist.getArtist(req.params.id)
+    .then(artist => {
+      new Album(req.body.name, artist.toSimple()).save()
+        .then(album => {
+          artist.albums.push(album.toSimple());
+          artist.save().then(artist => res.send(new Response.Data(artist)));
+        });
+    });
 });
 
 module.exports = router;
