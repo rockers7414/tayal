@@ -66,6 +66,12 @@ class Artist {
         return artist;
       });
   }
+
+  static deleteArtist(id) {
+    return Database.getCollection('artists')
+      .then(collection => collection.deleteOne({_id: new ObjectID(id)}))
+      .then(result => result.deletedCount == 1);
+  }
 }
 
 module.exports = Artist;
