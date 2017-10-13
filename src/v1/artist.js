@@ -56,7 +56,7 @@ router.delete('/:id(\\w{12})', (req, res) => {
     });
 });
 
-router.post('/:id(\\w{12})/albums', (req, res) => {
+router.post('/:id(\\w{24})/albums', (req, res) => {
   if (!req.body.name || req.body.name == '') {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
