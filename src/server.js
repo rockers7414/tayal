@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 
 const api = require('./v1/api');
 const artist = require('./v1/artist');
+const album = require('./v1/album');
 
 const app = express();
 app.use(bodyParser.json());
@@ -11,6 +12,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use('/api/v1', api);
 app.use('/api/v1/artists', artist);
+app.use('/api/v1/albums', album);
 
 const port = process.env.PORT || '3000';
 app.set('port', port);
