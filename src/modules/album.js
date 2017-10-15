@@ -6,7 +6,7 @@ const Error = require('../objects/error');
 
 class Album {
     static getAlbums(index = 0, offset = 50) {
-        return Database.getCollections('albums')
+        return Database.getCollection('albums')
             .then(collection => {
                 return new Promise((resolve, reject) => {
                     collection.find().skip(index).limit(offset).toArray((err, data) => {
@@ -27,14 +27,13 @@ class Album {
     }
 
     static getAlbum(id) {
-        return Database.getCollections('albums')
+        return Database.getCollection('albums')
             .then(collection => {
-                collection.findOne({ _id: new ObjectID(id) })
-                    .then(data => {
-                        const album = new Album(data.name, data.artist, data.tracks, data.images);
-                        album._id = data._id;
-                        return album;
-                    });
+                return collection.findOne({ _id: new ObjectID(id) });
+            }).then(data => {
+                const album = new Album(data.name, data.artist, data.tracks, data.images);
+                album._id = data._id;
+                return album;
             });
     }
 
@@ -46,10 +45,9 @@ class Album {
 
             return Database.getCollection('albums')
                 .then(collection => {
-                    collection.deleteOne({ _id: new ObjectID(id) })
-                        .then(result => {
-                            result.deleteCount == 1;
-                        });
+                    return collection.deleteOne({ _id: new ObjectID(id) });
+                }).then(result => {
+                    return result.deleteCount == 1;
                 });
         });
     }

@@ -21,7 +21,7 @@ router.post('/', (req, res) => {
             .send(new Response.Error(new Err.InvalidParam(['name is required'])));
     }
 
-    if (!req.body.artist || req.body.artist != '') {
+    if (req.body.artist && req.body.artist != '') {
         Artist.getArtist(req.body.artist)
             .then(artist => {
                 new Album(req.body.name, artist.toSimple()).save()
@@ -52,25 +52,40 @@ router.put('/:id(\\w{24})', (req, res) => {
 
     Album.getAlbum(req.params.id).then(album => {
         album.name = req.body.name;
+        album.tracks = req.body.tracks || [];
+        album.images = req.body.images;
+
         if (req.body.artist && req.body.artist != '') {
             Artist.getArtist(req.body.artist)
                 .then(artist => {
-                    if (artist)
-                        album.artist = artist.toSimple();
+                    console.log(artist);
+                    console.log('aaaa');
+                    var isExist = false;
+                    artist.albums.forEach(obj => {
+                        if (obj._id == req.body.artist) {
+                            isExist = true;
+                            return false;
+                        }
+                    });
+
+                    if (!isExist) {
+                        artist.albums.push(album.toSimple());
+                        artist.save();
+                    }
+                    album.artist = artist.toSimple();
+                    album.save();
+                    res.status(200).send(new Response.Data(album));
                 });
+        } else {
+            res.status(200).send(new Response.Data(album));
         }
-        album.tracks = req.body.album || [];
-        album.images = req.body.images;
-        return album.save();
-    }).then(album => {
-        res.status(200).send(new Response.Data(album));
     });
 });
 
 router.delete('/:id(\\w{24})', (req, res) => {
     Album.deleteAlbum(req.params.id)
         .then(result => {
-            result => res.send(new Response.Data(result));
+            res.send(new Response.Data(result));
         })
         .catch(err => {
             if (err instanceof Err.UnremovableError) {
@@ -83,6 +98,5 @@ router.delete('/:id(\\w{24})', (req, res) => {
 router.get('*', (req, res) => {
     res.status(404).send(new Response.Error(new Err.ResourceNotFound()));
 });
-
 
 module.exports = router;
