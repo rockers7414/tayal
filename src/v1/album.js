@@ -58,8 +58,6 @@ router.put('/:id(\\w{24})', (req, res) => {
         if (req.body.artist && req.body.artist != '') {
             Artist.getArtist(req.body.artist)
                 .then(artist => {
-                    console.log(artist);
-                    console.log('aaaa');
                     var isExist = false;
                     artist.albums.forEach(obj => {
                         if (obj._id == req.body.artist) {
