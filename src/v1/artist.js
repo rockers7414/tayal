@@ -68,6 +68,7 @@ router.post('/:id(\\w{12})/albums', (req, res) => {
           artist.albums.push(album.toSimple());
           artist.save().then(artist => res.status(200).send(new Response.Data(artist)));
         });
+
     });
 });
 
