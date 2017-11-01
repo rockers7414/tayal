@@ -28,7 +28,7 @@ class Artist {
 
   static getArtist(id) {
     return Database.getCollection('artists')
-      .then(collection => collection.findOne({_id: new ObjectID(id)}))
+      .then(collection => collection.findOne({ _id: new ObjectID(id) }))
       .then(data => {
         const artist = new Artist(data.name, data.albums, data.images);
         artist._id = data._id;
@@ -43,7 +43,7 @@ class Artist {
       }
 
       return Database.getCollection('artists')
-        .then(collection => collection.deleteOne({_id: new ObjectID(id)}))
+        .then(collection => collection.deleteOne({ _id: new ObjectID(id) }))
         .then(result => result.deletedCount == 1);
     });
   }
@@ -58,9 +58,8 @@ class Artist {
     return Database.getCollection('artists')
       .then(collection => {
         return new Promise((resolve, reject) => {
-          collection.updateOne({_id: new ObjectID(this._id)},
-            this,
-            {upsert: true},
+          collection.updateOne({ _id: new ObjectID(this._id) },
+            this, { upsert: true },
             (err, res) => {
               if (err) {
                 reject(err);
