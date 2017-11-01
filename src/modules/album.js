@@ -47,7 +47,7 @@ class Album {
         .then(collection => {
           return collection.deleteOne({ _id: new ObjectID(id) });
         }).then(result => {
-          return result.deleteCount == 1;
+          return result.deletedCount == 1;
         });
     });
   }
