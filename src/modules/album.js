@@ -21,7 +21,7 @@ class Album {
             });
 
             resolve(new Page(index, offset, albums, data.length));
-          })
+          });
         });
       });
   }

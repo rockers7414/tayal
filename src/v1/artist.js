@@ -24,13 +24,13 @@ router.post('/', (req, res) => {
   });
 });
 
-router.get('/:id(\\w{12})', (req, res) => {
+router.get('/:id(\\w{24})', (req, res) => {
   Artist.getArtist(req.params.id).then(artist => {
     res.status(200).send(new Response.Data(artist));
   });
 });
 
-router.put('/:id(\\w{12})', (req, res) => {
+router.put('/:id(\\w{24})', (req, res) => {
   if (!req.body.name || req.body.name == '') {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
@@ -45,7 +45,7 @@ router.put('/:id(\\w{12})', (req, res) => {
     });
 });
 
-router.delete('/:id(\\w{12})', (req, res) => {
+router.delete('/:id(\\w{24})', (req, res) => {
   Artist.deleteArtist(req.params.id)
     .then(result => res.send(new Response.Data(result)))
     .catch(e => {
@@ -56,7 +56,7 @@ router.delete('/:id(\\w{12})', (req, res) => {
     });
 });
 
-router.post('/:id(\\w{12})/albums', (req, res) => {
+router.post('/:id(\\w{24})/albums', (req, res) => {
   if (!req.body.name || req.body.name == '') {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
