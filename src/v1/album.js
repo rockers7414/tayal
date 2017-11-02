@@ -21,8 +21,8 @@ router.post('/', (req, res) => {
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
   }
 
-  if (req.body.artist && req.body.artist != '') {
-    Artist.getArtist(req.body.artist)
+  if (req.body.artist && req.body.artist._id != '') {
+    Artist.getArtist(req.body.artist._id)
       .then(artist => {
         new Album(req.body.name, artist.toSimple()).save()
           .then(album => {
@@ -87,17 +87,6 @@ router.put('/:id(\\w{24})', (req, res) => {
       _res(album);
     }
 
-    function removeAlbumFromArtist(artistId, albumId) {
-      Artist.getArtist(artistId).then(artist => {
-        for (var index = 0; index < artist.albums.length; index++) {
-          if (albumId.toHexString() == artist.albums[index]._id.toHexString()) {
-            artist.albums.splice(index, 1);
-          }
-        }
-        artist.save();
-      });
-    }
-
     function _res(album) {
       album.save().then(result => {
         res.status(200).send(new Response.Data(album));
@@ -107,8 +96,11 @@ router.put('/:id(\\w{24})', (req, res) => {
 });
 
 router.delete('/:id(\\w{24})', (req, res) => {
+  Album.getAlbum(req.params.id).then(album => {
+    if (album)
+      removeAlbumFromArtist(album.artist._id, album._id);
+  });
 
-  // TODO remove album from artist.
   Album.deleteAlbum(req.params.id)
     .then(result => {
       res.send(new Response.Data(result));
@@ -124,5 +116,16 @@ router.delete('/:id(\\w{24})', (req, res) => {
 router.get('*', (req, res) => {
   res.status(404).send(new Response.Error(new Err.ResourceNotFound()));
 });
+
+function removeAlbumFromArtist(artistId, albumId) {
+  Artist.getArtist(artistId).then(artist => {
+    for (var index = 0; index < artist.albums.length; index++) {
+      if (albumId.toHexString() == artist.albums[index]._id.toHexString()) {
+        artist.albums.splice(index, 1);
+      }
+    }
+    artist.save();
+  });
+}
 
 module.exports = router;
