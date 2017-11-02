@@ -56,11 +56,16 @@ router.put('/:id(\\w{24})', (req, res) => {
     album.images = req.body.images;
 
     if (req.body.artist && req.body.artist != '') {
-      Artist.getArtist(req.body.artist)
+
+      if (album.artist && album.artist._id != req.body.artist._id) {
+        removeAlbumFromArtist(album.artist._id, album._id);
+      }
+
+      Artist.getArtist(req.body.artist._id)
         .then(artist => {
           var isExist = false;
           artist.albums.forEach(obj => {
-            if (obj._id == req.body.artist) {
+            if (obj._id.toHexString() == album._id.toHexString()) {
               isExist = true;
               return false;
             }
@@ -70,17 +75,40 @@ router.put('/:id(\\w{24})', (req, res) => {
             artist.albums.push(album.toSimple());
             artist.save();
           }
+
           album.artist = artist.toSimple();
-          album.save();
-          res.status(200).send(new Response.Data(album));
+          _res(album);
         });
     } else {
-      res.status(200).send(new Response.Data(album));
+      if (album.artist) {
+        removeAlbumFromArtist(album.artist._id, album._id);
+        album.artist = undefined;
+      }
+      _res(album);
+    }
+
+    function removeAlbumFromArtist(artistId, albumId) {
+      Artist.getArtist(artistId).then(artist => {
+        for (var index = 0; index < artist.albums.length; index++) {
+          if (albumId.toHexString() == artist.albums[index]._id.toHexString()) {
+            artist.albums.splice(index, 1);
+          }
+        }
+        artist.save();
+      });
+    }
+
+    function _res(album) {
+      album.save().then(result => {
+        res.status(200).send(new Response.Data(album));
+      });
     }
   });
 });
 
 router.delete('/:id(\\w{24})', (req, res) => {
+
+  // TODO remove album from artist.
   Album.deleteAlbum(req.params.id)
     .then(result => {
       res.send(new Response.Data(result));
