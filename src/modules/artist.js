@@ -9,18 +9,20 @@ class Artist {
     return Database.getCollection('artists')
       .then(collection => {
         return new Promise((resolve, reject) => {
-          collection.find().skip(index).limit(offset).toArray((err, data) => {
-            if (err) {
-              reject(err);
-            }
+          collection.count().then(total => {
+            collection.find().skip(index).limit(offset).toArray((err, data) => {
+              if (err) {
+                reject(err);
+              }
 
-            const artists = data.map(data => {
-              const artist = new Artist(data.name, data.albums, data.images);
-              artist._id = data._id;
-              return artist;
+              const artists = data.map(data => {
+                const artist = new Artist(data.name, data.albums, data.images);
+                artist._id = data._id;
+                return artist;
+              });
+
+              resolve(new Page(index, offset, artists, total));
             });
-
-            resolve(new Page(index, offset, artists, data.length));
           });
         });
       });
