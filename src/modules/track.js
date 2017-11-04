@@ -4,9 +4,10 @@ const ObjectID = require('mongodb').ObjectID;
 const Page = require('../objects/page');
 const Error = require('../objects/error');
 
-class Album {
-  static getAlbums(index = 0, offset = 50) {
-    return Database.getCollection('albums')
+class Track {
+
+  static getTracks(index = 0, offset = 50) {
+    return Database.getCollection('tracks')
       .then(collection => {
         return new Promise((resolve, reject) => {
           collection.count().then(total => {
@@ -15,54 +16,48 @@ class Album {
                 reject(err);
               }
 
-              const albums = data.map(data => {
-                const album = new Album(data.name, data.artist, data.tracks, data.images);
-                album._id = data._id;
-                return album;
+              const tracks = data.map(data => {
+                const track = new Track(data.album, data.trackNumber, data.name, data.lyric);
+                track._id = data._id;
+                return track;
               });
 
-              resolve(new Page(index, offset, albums, total));
+              resolve(new Page(index, offset, tracks, total));
             });
           });
         });
       });
   }
 
-  static getAlbum(id) {
-    return Database.getCollection('albums')
+  static getTrack(id) {
+    return Database.getCollection('tracks')
       .then(collection => {
         return collection.findOne({ _id: new ObjectID(id) });
       }).then(data => {
-        const album = new Album(data.name, data.artist, data.tracks, data.images);
-        album._id = data._id;
-        return album;
+        const track = new Track(data.album, data.trackNumber, data.name, data.lyric);
+        track._id = data._id;
+        return track;
       });
   }
 
-  static deleteAlbum(id) {
-    return Album.getAlbum(id).then(album => {
-      if (album.tracks.lengh > 0) {
-        throw new Error.UnremoveableError('has related tracks');
-      }
-
-      return Database.getCollection('albums')
-        .then(collection => {
-          return collection.deleteOne({ _id: new ObjectID(id) });
-        }).then(result => {
-          return result.deletedCount == 1;
-        });
-    });
+  static deleteTrack(id) {
+    return Database.getCollection('tracks')
+      .then(collection => {
+        return collection.deleteOne({ _id: new ObjectID(id) });
+      }).then(result => {
+        return result.deletedCount == 1;
+      });
   }
 
-  constructor(name, artist, tracks = [], images = []) {
+  constructor(album, trackNumber, name, lyric) {
+    this.album = album;
+    this.trackNumber = trackNumber;
     this.name = name;
-    this.artist = artist;
-    this.tracks = tracks;
-    this.images = images;
+    this.lyric = lyric;
   }
 
   save() {
-    return Database.getCollection('albums')
+    return Database.getCollection('tracks')
       .then(collection => {
         return new Promise((resolve, reject) => {
           collection.updateOne({ _id: new ObjectID(this._id) },
@@ -89,9 +84,10 @@ class Album {
   toSimple() {
     return {
       _id: this._id,
+      trackNumber: this.trackNumber,
       name: this.name
     };
   }
 }
 
-module.exports = Album;
+module.exports = Track;

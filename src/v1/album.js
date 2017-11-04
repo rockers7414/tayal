@@ -5,6 +5,7 @@ const Err = require('../objects/error');
 
 const Album = require('../modules/album');
 const Artist = require('../modules/artist');
+const JsonUtils = require('../lib/json-utils');
 
 router.get('/', (req, res) => {
   const index = req.query.index ? parseInt(req.query.index) : 0;
@@ -55,37 +56,35 @@ router.put('/:id(\\w{24})', (req, res) => {
     album.tracks = req.body.tracks || [];
     album.images = req.body.images;
 
-    if (req.body.artist && req.body.artist != '') {
+    /** Update artist */
+    new Promise((resolve, reject) => {
 
-      if (album.artist && album.artist._id != req.body.artist._id) {
-        removeAlbumFromArtist(album.artist._id, album._id);
-      }
+    }).then()
+    /** Update artist information. */
+    // if (req.body.artist && req.body.artist != '') {
+    //   if (album.artist && album.artist._id != req.body.artist._id) {
+    //     removeAlbumFromArtist(album.artist._id, album);
+    //   }
 
-      Artist.getArtist(req.body.artist._id)
-        .then(artist => {
-          var isExist = false;
-          artist.albums.forEach(obj => {
-            if (obj._id.toHexString() == album._id.toHexString()) {
-              isExist = true;
-              return false;
-            }
-          });
+    //   Artist.getArtist(req.body.artist._id)
+    //     .then(artist => {
+    //       if (!JsonUtils.hasSameByKey("_id", album, artist.albums)) {
+    //         artist.albums.push(album.toSimple());
+    //         artist.save();
+    //       }
+    //       album.artist = artist.toSimple();
+    //       _res(album); //TODO
+    //     });
+    // } else {
+    //   if (album.artist) {
+    //     removeAlbumFromArtist(album.artist._id, album);
+    //     album.artist = undefined;
+    //   }
+    //   _res(album); //TODO
+    // }
 
-          if (!isExist) {
-            artist.albums.push(album.toSimple());
-            artist.save();
-          }
+    /** Update tracks information */
 
-          album.artist = artist.toSimple();
-          _res(album);
-        });
-    } else {
-      if (album.artist) {
-        removeAlbumFromArtist(album.artist._id, album._id);
-        album.artist = undefined;
-      }
-      _res(album);
-    }
 
     function _res(album) {
       album.save().then(result => {
@@ -98,7 +97,7 @@ router.put('/:id(\\w{24})', (req, res) => {
 router.delete('/:id(\\w{24})', (req, res) => {
   Album.getAlbum(req.params.id).then(album => {
     if (album)
-      removeAlbumFromArtist(album.artist._id, album._id);
+      removeAlbumFromArtist(album.artist._id, album);
   });
 
   Album.deleteAlbum(req.params.id)
@@ -117,13 +116,9 @@ router.get('*', (req, res) => {
   res.status(404).send(new Response.Error(new Err.ResourceNotFound()));
 });
 
-function removeAlbumFromArtist(artistId, albumId) {
+function removeAlbumFromArtist(artistId, album) {
   Artist.getArtist(artistId).then(artist => {
-    for (var index = 0; index < artist.albums.length; index++) {
-      if (albumId.toHexString() == artist.albums[index]._id.toHexString()) {
-        artist.albums.splice(index, 1);
-      }
-    }
+    JsonUtils.removeFromArrayByKey("_id", album, artist.albums);
     artist.save();
   });
 }
