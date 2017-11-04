@@ -5,6 +5,7 @@ const Err = require('../objects/error');
 
 const Album = require('../modules/album');
 const Artist = require('../modules/artist');
+const JsonUtils = require('../lib/json-utils');
 
 router.get('/', (req, res) => {
   const index = req.query.index ? parseInt(req.query.index) : 0;
@@ -21,8 +22,8 @@ router.post('/', (req, res) => {
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
   }
 
-  if (req.body.artist && req.body.artist != '') {
-    Artist.getArtist(req.body.artist)
+  if (req.body.artist && req.body.artist._id != '') {
+    Artist.getArtist(req.body.artist._id)
       .then(artist => {
         new Album(req.body.name, artist.toSimple()).save()
           .then(album => {
@@ -55,32 +56,50 @@ router.put('/:id(\\w{24})', (req, res) => {
     album.tracks = req.body.tracks || [];
     album.images = req.body.images;
 
-    if (req.body.artist && req.body.artist != '') {
-      Artist.getArtist(req.body.artist)
-        .then(artist => {
-          var isExist = false;
-          artist.albums.forEach(obj => {
-            if (obj._id == req.body.artist) {
-              isExist = true;
-              return false;
-            }
-          });
+    /** Update artist */
+    new Promise((resolve, reject) => {
 
-          if (!isExist) {
-            artist.albums.push(album.toSimple());
-            artist.save();
-          }
-          album.artist = artist.toSimple();
-          album.save();
-          res.status(200).send(new Response.Data(album));
-        });
-    } else {
-      res.status(200).send(new Response.Data(album));
+    }).then()
+    /** Update artist information. */
+    // if (req.body.artist && req.body.artist != '') {
+    //   if (album.artist && album.artist._id != req.body.artist._id) {
+    //     removeAlbumFromArtist(album.artist._id, album);
+    //   }
+
+    //   Artist.getArtist(req.body.artist._id)
+    //     .then(artist => {
+    //       if (!JsonUtils.hasSameByKey("_id", album, artist.albums)) {
+    //         artist.albums.push(album.toSimple());
+    //         artist.save();
+    //       }
+    //       album.artist = artist.toSimple();
+    //       _res(album); //TODO
+    //     });
+    // } else {
+    //   if (album.artist) {
+    //     removeAlbumFromArtist(album.artist._id, album);
+    //     album.artist = undefined;
+    //   }
+    //   _res(album); //TODO
+    // }
+
+    /** Update tracks information */
+
+
+    function _res(album) {
+      album.save().then(result => {
+        res.status(200).send(new Response.Data(album));
+      });
     }
   });
 });
 
 router.delete('/:id(\\w{24})', (req, res) => {
+  Album.getAlbum(req.params.id).then(album => {
+    if (album)
+      removeAlbumFromArtist(album.artist._id, album);
+  });
+
   Album.deleteAlbum(req.params.id)
     .then(result => {
       res.send(new Response.Data(result));
@@ -96,5 +115,12 @@ router.delete('/:id(\\w{24})', (req, res) => {
 router.get('*', (req, res) => {
   res.status(404).send(new Response.Error(new Err.ResourceNotFound()));
 });
+
+function removeAlbumFromArtist(artistId, album) {
+  Artist.getArtist(artistId).then(artist => {
+    JsonUtils.removeFromArrayByKey("_id", album, artist.albums);
+    artist.save();
+  });
+}
 
 module.exports = router;
