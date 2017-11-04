@@ -6,6 +6,18 @@ const Err = require('../objects/error');
 const Artist = require('../modules/artist');
 const Album = require('../modules/album');
 
+/**
+ * @api {get} /artists Get page of artists.
+ * @apiName GetArtists
+ * @apiGroup Artists
+ *
+ * @apiParam {Number} [index=0] index Index of pagment.
+ * @apiParam {Number} [offset=50] offset Size of pagment.
+ *
+ * @apiSuccess {Object} collection Page of artists.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/artists
+ */
 router.get('/', (req, res) => {
   const index = req.query.index ? parseInt(req.query.index) : 0;
   const offset = req.query.offset ? parseInt(req.query.offset) : 50;
