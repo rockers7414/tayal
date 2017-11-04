@@ -24,6 +24,14 @@ class UnremovableError {
   }
 }
 
+/*** Operation errors ***/
+class IllegalOperationError {
+  constructor(reason) {
+    this.status = 60001;
+    this.err_msg = 'Illegal operation.(' + reason + ')';
+  }
+}
+
 module.exports = {
   ResourceNotFound: ResourceNotFound,
   InvalidParam: InvalidParam,
