@@ -114,16 +114,56 @@ router.delete('/:albumId(\\w{24})/artist)', (req, res) => {
       res.status(400)
         .send(new Response.Error(new Err.InvalidParam(['album not found'])));
     } else {
-      album.artist = undefined;
-      album.save().then(result = > {
-        res.send(new Response.Data(album));
+      Artist.getArtist(req.params.artist).then(artist => {
+        _.remove(artist.albums, (_album) => {
+          return _album._id.equals(album._id);
+        });
+        album.artist = undefined;
+
+        Promise.all([artist.save(), album.save()]).then(result => {
+          res.send(new Response.Data(album));
+        });
       });
     }
   });
 });
 
-router.put('/:albumId(\\w{24})/artist/:artistId(\\w{24})', (req, res) => {
-  // TODO
+router.put('/:albumId(\\w{24})/artist)', (req, res) => {
+  if (!req.body.artist || req.body.artist == '') {
+    res.status(400)
+      .send(new Response.Error(new Err.InvalidParam(['artist is required'])));
+  }
+
+  Album.getAlbum(req.params.albumId).then(album => {
+    if (!album) {
+      res.status(400)
+        .send(new Response.Error(new Err.InvalidParam(['album not found'])));
+    } else {
+      /** Remove album from ori artist. */
+      var oriArtist = undefined;
+      if (album.artist) {
+        Artist.getArtist(album.artist._id.toHexString()).then(artist => {
+          _.remove(artist.albums, (_album) => {
+            return _album._id.equals(album._id);
+          });
+          oriArtist = artist;
+        });
+      }
+
+      /** Add album to new artist */
+      var newArtist = undefined;
+      Artist.getArtist(req.body.artist).then(artist => {
+        artist.albums.push(album.toSimple());
+        newArtist = artist;
+      });
+
+      album.artist = newArtist.toSimple();
+
+      Promise.all([oriArtist.save(), newArtist.save(), album.save()]).then(result => {
+        res.send(new Response.Data(album));
+      });
+    }
+  });
 });
 
 router.post('/:id(\\w{24}/tracks)' (req, res) => {
