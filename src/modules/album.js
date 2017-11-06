@@ -33,9 +33,12 @@ class Album {
       .then(collection => {
         return collection.findOne({ _id: new ObjectID(id) });
       }).then(data => {
-        const album = new Album(data.name, data.artist, data.tracks, data.images);
-        album._id = data._id;
-        return album;
+        if (data) {
+          const album = new Album(data.name, data.artist, data.tracks, data.images);
+          album._id = data._id;
+          return album;
+        }
+        return null;
       });
   }
 

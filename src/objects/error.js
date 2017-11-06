@@ -10,9 +10,9 @@ class InvalidParam {
 }
 
 class ResourceNotFound {
-  constructor() {
+  constructor(reason) {
     this.status = 40002;
-    this.err_msg = 'Resource not found.';
+    this.err_msg = 'Resource not found.(' + reason + ')';
   }
 }
 
@@ -35,5 +35,6 @@ class IllegalOperationError {
 module.exports = {
   ResourceNotFound: ResourceNotFound,
   InvalidParam: InvalidParam,
-  UnremovableError: UnremovableError
+  UnremovableError: UnremovableError,
+  IllegalOperationError: IllegalOperationError
 };

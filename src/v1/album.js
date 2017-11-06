@@ -86,41 +86,40 @@ router.post('/:id(\\w{24})/artist', (req, res) => {
   if (!req.body.artist || req.body.artist == '') {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['artist is required'])));
+  } else {
+    Artist.getArtist(req.body.artist).then(artist => {
+      if (!artist) {
+        res.status(400)
+          .send(new Response.Error(new Err.ResourceNotFound(['artist not found'])));
+      } else {
+        Album.getAlbum(req.params.id).then(album => {
+          if (album.artist) {
+            res.status(400)
+              .send(new Response.Error(new Err.IllegalOperationError(['artist already set'])));
+          } else {
+            artist.albums.push(album.toSimple());
+            album.artist = artist.toSimple();
+            Promise.all([artist.save(), album.save()]).then(result => {
+              res.send(new Response.Data(album));
+            });
+          }
+        });
+      }
+    });
   }
-
-  Artist.getArtist(req.body.artist).then(artist => {
-    if (!artist) {
-      res.status(400)
-        .send(new Response.Error(new Err.ResourceNotFound(['artist not found'])));
-    } else {
-      Album.getAlbum(req.params.id).then(album => {
-        if (album.artist) {
-          res.status(400)
-            .send(new Response.Error(new Err.IllegalOperationError(['artist already set'])));
-        } else {
-          artist.albums.push(album.toSimple());
-          album.artist = artist.toSimple();
-          Promise.all([artist.save(), album.save()]).then(result => {
-            res.send(new Response.Data(album));
-          });
-        }
-      });
-    }
-  });
 });
 
-router.delete('/:albumId(\\w{24})/artist', (req, res) => {
-  Album.getAlbum(req.params.albumId).then(album => {
+router.delete('/:id(\\w{24})/artist', (req, res) => {
+  Album.getAlbum(req.params.id).then(album => {
     if (!album) {
       res.status(400)
         .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
     } else {
-      Artist.getArtist(req.params.artist).then(artist => {
+      Artist.getArtist(album.artist._id.toHexString()).then(artist => {
         _.remove(artist.albums, (_album) => {
           return _album._id.equals(album._id);
         });
         album.artist = null;
-
         Promise.all([artist.save(), album.save()]).then(result => {
           res.send(new Response.Data(album));
         });
@@ -143,29 +142,38 @@ router.put('/:albumId(\\w{24})/artist', (req, res) => {
       /** Remove album from ori artist. */
       var oriArtist = null;
       if (album.artist) {
-        Artist.getArtist(album.artist._id.toHexString()).then(artist => {
-          _.remove(artist.albums, (_album) => {
-            return _album._id.equals(album._id);
+        oriArtist = new Promise((resolve, reject) => {
+          Artist.getArtist(album.artist._id.toHexString()).then(artist => {
+            _.remove(artist.albums, (_album) => {
+              return _album._id.equals(album._id);
+            });
+            artist.save().then(result => {
+              resolve();
+            });
           });
-          oriArtist = artist;
         });
       }
 
       /** Add album to new artist */
       var newArtist = null;
-      Artist.getArtist(req.body.artist).then(artist => {
-        var _album = _.find(artist.albums, (o) => {
-          return o._id.equals(album._id);
+      newArtist = new Promise((resolve, reject) => {
+        Artist.getArtist(req.body.artist).then(artist => {
+          var _album = _.find(artist.albums, (o) => {
+            return o._id.equals(album._id);
+          });
+          if (!_album)
+            artist.albums.push(album.toSimple());
+          album.artist = artist.toSimple();
+          artist.save().then(result => {
+            resolve();
+          });
         });
-        if (!_album)
-          artist.albums.push(album.toSimple());
-        newArtist = artist;
       });
 
-      album.artist = newArtist.toSimple();
-
-      Promise.all([oriArtist.save(), newArtist.save(), album.save()]).then(result => {
-        res.send(new Response.Data(album));
+      Promise.all([oriArtist, newArtist]).then(result => {
+        album.save().then(result => {
+          res.send(new Response.Data(album));
+        });
       });
     }
   });
