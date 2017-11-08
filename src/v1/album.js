@@ -2,6 +2,7 @@ const router = require('express').Router();
 
 const Response = require('../objects/response');
 const Err = require('../objects/error');
+const ObjectID = require('mongodb').ObjectID;
 
 const Album = require('../modules/album');
 const Artist = require('../modules/artist');
@@ -44,20 +45,36 @@ router.delete('/:id(\\w{24})', (req, res) => {
     } else if (album.tracks && album.tracks.length > 0) {
       res.status(400)
         .send(new Response.Error((new Err.UnremovableError('has related tracks'))));
-    } else if (album.artist) {
-      res.status(400)
-        .send(new Response.Error((new Err.UnremovableError('has related artist'))));
     } else {
-      Album.deleteAlbum(req.params.id)
-        .then(result => {
-          res.send(new Response.Data(result));
-        })
-        .catch(err => {
-          if (err instanceof Err.UnremovableError) {
-            res.status(400);
-          }
-          res.send(new Response.Error(err));
-        });
+      var promiseList = [];
+
+      if (album.artist) {
+        promiseList.push(
+          Artist.getArtist(album.artist._id.toHexString()).then(artist => {
+            if (artist.albums) {
+              _.remove(artist.albums, (_album) => {
+                return _album._id.equals(album._id);
+              });
+              return artist.save();
+            }
+          }).catch(err => {
+            console.log(err);
+          })
+        );
+      }
+
+      promiseList.push(
+        Album.deleteAlbum(req.params.id)
+      );
+
+      Promise.all(promiseList).then(result => {
+        res.send(new Response.Data(result));
+      }).catch(err => {
+        if (err instanceof Err.UnremovableError) {
+          res.status(400);
+        }
+        res.send(new Response.Error(err));
+      });
     }
   });
 });
@@ -66,20 +83,20 @@ router.put('/:id(\\w{24})', (req, res) => {
   if (!req.body.name || req.body.name == '') {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
+  } else {
+    Album.getAlbum(req.params.id).then(album => {
+      if (!album) {
+        return res.status(400)
+          .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
+      } else {
+        album.name = req.body.name;
+        album.images = req.body.images;
+        album.save().then(result => {
+          res.send(new Response.Data(album));
+        });
+      }
+    });
   }
-
-  Album.getAlbum(req.params.id).then(album => {
-    if (!album) {
-      res.status(400)
-        .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
-    } else {
-      album.name = req.body.name;
-      album.images = req.body.images;
-      album.save().then(result => {
-        res.send(new Response.Data(album));
-      });
-    }
-  });
 });
 
 router.post('/:id(\\w{24})/artist', (req, res) => {
@@ -94,7 +111,7 @@ router.post('/:id(\\w{24})/artist', (req, res) => {
       } else {
         Album.getAlbum(req.params.id).then(album => {
           if (album.artist) {
-            res.status(400)
+            return res.status(400)
               .send(new Response.Error(new Err.IllegalOperationError(['artist already set'])));
           } else {
             artist.albums.push(album.toSimple());
@@ -128,53 +145,165 @@ router.delete('/:id(\\w{24})/artist', (req, res) => {
   });
 });
 
-router.put('/:albumId(\\w{24})/artist', (req, res) => {
+router.put('/:id(\\w{24})/artist', (req, res) => {
   if (!req.body.artist || req.body.artist == '') {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['artist is required'])));
-  }
-
-  Album.getAlbum(req.params.albumId).then(album => {
-    if (!album) {
-      res.status(400)
-        .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
-    } else {
-      /** Remove album from ori artist. */
-      var oriArtist = null;
-      if (album.artist) {
-        oriArtist = new Promise((resolve, reject) => {
-          Artist.getArtist(album.artist._id.toHexString()).then(artist => {
+  } else {
+    Album.getAlbum(req.params.id).then(album => {
+      if (!album) {
+        res.status(400)
+          .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
+      } else {
+        var promiseList = [];
+        /** Remove album from ori artist. */
+        if (album.artist) {
+          promiseList.push(Artist.getArtist(album.artist._id.toHexString()).then(artist => {
             _.remove(artist.albums, (_album) => {
               return _album._id.equals(album._id);
             });
-            artist.save().then(result => {
-              resolve();
-            });
-          });
-        });
-      }
+            return artist.save();
+          }));
+        }
 
-      /** Add album to new artist */
-      var newArtist = null;
-      newArtist = new Promise((resolve, reject) => {
-        Artist.getArtist(req.body.artist).then(artist => {
+        /** Add album to new artist */
+        promiseList.push(Artist.getArtist(req.body.artist).then(artist => {
           var _album = _.find(artist.albums, (o) => {
             return o._id.equals(album._id);
           });
           if (!_album)
             artist.albums.push(album.toSimple());
           album.artist = artist.toSimple();
-          artist.save().then(result => {
-            resolve();
-          });
-        });
-      });
+          return artist.save();
+        }));
 
-      Promise.all([oriArtist, newArtist]).then(result => {
-        album.save().then(result => {
+        promiseList.push(album.save());
+        Promise.all(promiseList).then(result => {
           res.send(new Response.Data(album));
         });
-      });
+      }
+    });
+  }
+});
+
+router.post('/:id(\\w{24})/tracks', (req, res) => {
+  Album.getAlbum(req.params.id).then(album => {
+    if (!album) {
+      res.status(400)
+        .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
+    } else {
+      if (!req.body.tracks || !req.body.tracks.length > 0) {
+        res.status(400)
+          .send(new Response.Error(new Err.InvalidParam(['tracks is required'])));
+      } else {
+
+        /** check track duplicate */
+        var isDuplicate = false;
+        req.body.tracks.forEach(newTrack => {
+          var _isDuplicate = _.find(album.tracks, (o) => {
+            return o._id.equals(new ObjectID(newTrack.track));
+          });
+          if (_isDuplicate) {
+            isDuplicate = true;
+            return false;
+          }
+        });
+        if (isDuplicate) {
+          return res.status(400)
+            .send(new Response.Error(new Err.IllegalOperationError(['track duplicate'])));
+        }
+
+        /** check track number duplicate */
+        var isNumberDuplicate = false;
+
+        req.body.tracks.forEach(newTrack => {
+          var _isDuplicate = _.find(req.body.tracks, (o) => {
+            return o.trackNumber == newTrack.trackNumber && o.track != newTrack.track;
+          });
+          if (_isDuplicate) {
+            isNumberDuplicate = true;
+            return false;
+          }
+        });
+        if (isNumberDuplicate) {
+          return res.status(400)
+            .send(new Response.Error(new Err.IllegalOperationError(['track number duplicate'])));
+        }
+
+        /** check track number duplicate with existing data */
+        var isNumberExisting = false;
+        req.body.tracks.forEach(newTrack => {
+          var _isDuplicate = _.find(album.tracks, (o) => {
+            return o.trackNumber == newTrack.trackNumber;
+          });
+          if (_isDuplicate) {
+            isNumberExisting = true;
+            return false;
+          }
+        });
+        if (isNumberExisting) {
+          return res.status(400)
+            .send(new Response.Error(new Err.IllegalOperationError(['track number exists'])));
+        }
+
+        /** check album was already set */
+        var promiseList = [];
+        req.body.tracks.forEach(newTrack => {
+            
+        });
+
+        /** check track is exist */
+        // TODO
+
+        /** save tracks, album */
+        // TODO
+
+        // var promiseList = [];
+        // req.body.tracks.forEach(newTrack => {
+        //     console.log(newTrack);
+        //   if (!newTrack.trackNumber || newTrack.trackNumber == '') {
+        //     res.status(400)
+        //       .send(new Response.Error(new Err.InvalidParam(['track number is required(' + newTrack._id + ')'])));
+        //   } else {
+        //     Track.getTrack(newTrack.track).then(track => {  
+        //       if (!track) {
+        //         return res.status(400)
+        //           .send(new Response.Error(new Err.ResourceNotFound(['track not found'])));
+        //       } else if (track.album) {
+        //           console.log('222');
+        //         return res.status(400)
+        //           .send(new Response.Error(new Err.IllegalOperationError(['album already set'])));
+        //       } else {
+        //         var isSeqDuplicate = _.find(album.tracks, (o) => {
+        //           return o.trackNumber == newTrack.trackNumber;
+        //         });
+        //         if (isSeqDuplicate) {
+        //           return res.status(400)
+        //             .send(new Response.Error(new Err.IllegalOperationError(['track number duplicate'])));
+        //         } else {
+        //           track.album = album.toSimple();
+        //           var _track = _.find(album.tracks, (o) => {
+        //             return o._id.equals(track._id);
+        //           });
+
+        //           if (!_track) {
+        //             album.tracks.push(track.toSimple());
+        //             promiseList.push(track.save());
+        //           }
+        //         }
+        //       }
+        //     });
+        //   }
+        // });
+
+        // promiseList.push(album.save());
+        // Promise.all(promiseList).then(result => {
+        //   res.send(new Response.Data(album));
+        // });
+
+
+
+      }
     }
   });
 });
@@ -188,6 +317,9 @@ router.post('/:id(\\w{24})/track', (req, res) => {
       if (!req.body.track || req.body.track == '') {
         res.status(400)
           .send(new Response.Error(new Err.InvalidParam(['track is required'])));
+      } else if (!req.body.trackNumber || req.body.trackNumber == '') {
+        res.status(400)
+          .send(new Response.Error(new Err.InvalidParam(['track number is required'])));
       } else {
         Track.getTrack(req.body.track).then(track => {
           if (!track) {
@@ -197,17 +329,26 @@ router.post('/:id(\\w{24})/track', (req, res) => {
             res.status(400)
               .send(new Response.Error(new Err.IllegalOperationError(['album already set'])));
           } else {
-            track.album = album.toSimple();
-            var _track = _.find(album.tracks, (o) => {
-              return o._id.equals(track._id);
+            var isSeqDuplicate = _.find(album.tracks, (o) => {
+              return o.trackNumber == req.body.trackNumber;
             });
-            if (_track) {
-              album.tracks.push(track.toSimple());
-            }
+            if (isSeqDuplicate) {
+              return res.status(400)
+                .send(new Response.Error(new Err.IllegalOperationError(['track number duplicate'])));
+            } else {
+              track.album = album.toSimple();
+              track.trackNumber = req.body.trackNumber;
+              var _track = _.find(album.tracks, (o) => {
+                return o._id.equals(track._id);
+              });
+              if (!_track) {
+                album.tracks.push(track.toSimple());
+              }
 
-            Promise.all([track.save(), album.save()]).then(result => {
-              res.send(new Response.Data(album));
-            });
+              Promise.all([track.save(), album.save()]).then(result => {
+                res.send(new Response.Data(album));
+              });
+            }
           }
         });
       }

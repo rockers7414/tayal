@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
   const index = req.query.index ? parseInt(req.query.index) : 0;
   const offset = req.query.offset ? parseInt(req.query.offset) : 50;
 
-  Track.getTracks(index offset).then(page => {
+  Track.getTracks(index, offset).then(page => {
     res.status(200).send(new Response.Collection(page.data, page.index, page.offset, page.total));
   });
 });
@@ -22,25 +22,9 @@ router.get('/:id(\\w{24})', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  // this.album = album;
-  // this.trackNumber = trackNumber;
-  // this.name = name;
-  // this.lyric = lyric;
   if (!req.body.name || req.body.name == '') {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
-  }
-
-  if (req.body.album || req.body.album != '') {
-
-    // TODO
-    Album.getAlbum(req.body.album).then(album => {
-      new Track(album.toSimple(), req.body.trackNumber, req.body.name, req.body.lyric).save()
-        .then(track => {
-
-        });
-    });
-
   } else {
     new Track(null, null, req.body.name, null).save().then(track => {
       res.status(200).send(new Response.Data(track));
