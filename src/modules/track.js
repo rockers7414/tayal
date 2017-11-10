@@ -34,9 +34,35 @@ class Track {
       .then(collection => {
         return collection.findOne({ _id: new ObjectID(id) });
       }).then(data => {
+        if (!data)
+          return null;
         const track = new Track(data.album, data.trackNumber, data.name, data.lyric);
         track._id = data._id;
         return track;
+      });
+  }
+
+  static getTracks(idArray) {
+    return Database.getCollection('tracks')
+      .then(collection => {
+        /** refactor idArray */
+        var objIds = [];
+        idArray.forEach(id => {
+          objIds.push(new ObjectID(id));
+        });
+        return collection.find({ "_id": { $in: objIds } });
+      }).then(cursor => {
+        return cursor.toArray().then(dataArray => {
+          var result = [];
+          dataArray.forEach(data => {
+            var track = new Track(data.album, data.trackNumber, data.name, data.lyric);
+            track._id = data._id;
+            result.push(track);
+          });
+          return result;
+        });
+      }).catch(error => {
+        console.log(error);
       });
   }
 

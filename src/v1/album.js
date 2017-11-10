@@ -196,113 +196,64 @@ router.post('/:id(\\w{24})/tracks', (req, res) => {
         res.status(400)
           .send(new Response.Error(new Err.InvalidParam(['tracks is required'])));
       } else {
-
-        /** check track duplicate */
-        var isDuplicate = false;
+        var errorMsg = null;
         req.body.tracks.forEach(newTrack => {
-          var _isDuplicate = _.find(album.tracks, (o) => {
-            return o._id.equals(new ObjectID(newTrack.track));
+          /** check track duplicate */
+          var _isTrackDuplicate = _.find(album.tracks, (o) => {
+            return o._id.equals(new ObjectID(newTrack._id));
           });
-          if (_isDuplicate) {
-            isDuplicate = true;
+          if (_isTrackDuplicate) {
+            errorMsg = new Err.IllegalOperationError(['track duplicate']);
             return false;
           }
-        });
-        if (isDuplicate) {
-          return res.status(400)
-            .send(new Response.Error(new Err.IllegalOperationError(['track duplicate'])));
-        }
 
-        /** check track number duplicate */
-        var isNumberDuplicate = false;
-
-        req.body.tracks.forEach(newTrack => {
-          var _isDuplicate = _.find(req.body.tracks, (o) => {
-            return o.trackNumber == newTrack.trackNumber && o.track != newTrack.track;
+          /** check track number duplicate */
+          var _isTrackNumberDuplicate = _.find(req.body.tracks, (o) => {
+            return o.trackNumber == newTrack.trackNumber && o._id != newTrack._id;
           });
-          if (_isDuplicate) {
-            isNumberDuplicate = true;
+          if (_isTrackNumberDuplicate) {
+            errorMsg = new Err.IllegalOperationError(['track number duplicate']);
             return false;
           }
-        });
-        if (isNumberDuplicate) {
-          return res.status(400)
-            .send(new Response.Error(new Err.IllegalOperationError(['track number duplicate'])));
-        }
 
-        /** check track number duplicate with existing data */
-        var isNumberExisting = false;
-        req.body.tracks.forEach(newTrack => {
-          var _isDuplicate = _.find(album.tracks, (o) => {
+          /** check track number duplicate with existing data */
+          var _isTrackNumberExists = _.find(album.tracks, (o) => {
             return o.trackNumber == newTrack.trackNumber;
           });
-          if (_isDuplicate) {
-            isNumberExisting = true;
+          if (_isTrackNumberExists) {
+            errorMsg = new Err.IllegalOperationError(['track number exists']);
             return false;
           }
         });
-        if (isNumberExisting) {
+
+        if (errorMsg) {
           return res.status(400)
-            .send(new Response.Error(new Err.IllegalOperationError(['track number exists'])));
+            .send(new Response.Error(errorMsg));
+        } else {
+
+          /** save tracks, album */
+          var idArray = [];
+          req.body.tracks.forEach(_track => {
+            idArray.push(_track._id);
+          });
+
+          Track.getTracks(idArray).then(tracks => {
+            var promiseList = [];
+            tracks.forEach(_track => {
+              _track.trackNumber = _.find(req.body.tracks, (o) => {
+                return o._id == _track._id.toHexString();
+              }).trackNumber;
+              _track.album = album.toSimple();
+              album.tracks.push(_track.toSimple());
+              promiseList.push(_track.save());
+            });
+
+            promiseList.push(album.save());
+            Promise.all(promiseList).then(result => {
+              res.send(new Response.Data(album));
+            });
+          });
         }
-
-        /** check album was already set */
-        var promiseList = [];
-        req.body.tracks.forEach(newTrack => {
-            
-        });
-
-        /** check track is exist */
-        // TODO
-
-        /** save tracks, album */
-        // TODO
-
-        // var promiseList = [];
-        // req.body.tracks.forEach(newTrack => {
-        //     console.log(newTrack);
-        //   if (!newTrack.trackNumber || newTrack.trackNumber == '') {
-        //     res.status(400)
-        //       .send(new Response.Error(new Err.InvalidParam(['track number is required(' + newTrack._id + ')'])));
-        //   } else {
-        //     Track.getTrack(newTrack.track).then(track => {  
-        //       if (!track) {
-        //         return res.status(400)
-        //           .send(new Response.Error(new Err.ResourceNotFound(['track not found'])));
-        //       } else if (track.album) {
-        //           console.log('222');
-        //         return res.status(400)
-        //           .send(new Response.Error(new Err.IllegalOperationError(['album already set'])));
-        //       } else {
-        //         var isSeqDuplicate = _.find(album.tracks, (o) => {
-        //           return o.trackNumber == newTrack.trackNumber;
-        //         });
-        //         if (isSeqDuplicate) {
-        //           return res.status(400)
-        //             .send(new Response.Error(new Err.IllegalOperationError(['track number duplicate'])));
-        //         } else {
-        //           track.album = album.toSimple();
-        //           var _track = _.find(album.tracks, (o) => {
-        //             return o._id.equals(track._id);
-        //           });
-
-        //           if (!_track) {
-        //             album.tracks.push(track.toSimple());
-        //             promiseList.push(track.save());
-        //           }
-        //         }
-        //       }
-        //     });
-        //   }
-        // });
-
-        // promiseList.push(album.save());
-        // Promise.all(promiseList).then(result => {
-        //   res.send(new Response.Data(album));
-        // });
-
-
-
       }
     }
   });
@@ -314,14 +265,14 @@ router.post('/:id(\\w{24})/track', (req, res) => {
       res.status(400)
         .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
     } else {
-      if (!req.body.track || req.body.track == '') {
+      if (!req.body._id || req.body._id == '') {
         res.status(400)
           .send(new Response.Error(new Err.InvalidParam(['track is required'])));
       } else if (!req.body.trackNumber || req.body.trackNumber == '') {
         res.status(400)
           .send(new Response.Error(new Err.InvalidParam(['track number is required'])));
       } else {
-        Track.getTrack(req.body.track).then(track => {
+        Track.getTrack(req.body._id).then(track => {
           if (!track) {
             res.status(400)
               .send(new Response.Error(new Err.ResourceNotFound(['track not found'])));
