@@ -9,18 +9,20 @@ class Album {
     return Database.getCollection('albums')
       .then(collection => {
         return new Promise((resolve, reject) => {
-          collection.find().skip(index).limit(offset).toArray((err, data) => {
-            if (err) {
-              reject(err);
-            }
+          collection.count().then(total => {
+            collection.find().skip(index).limit(offset).toArray((err, data) => {
+              if (err) {
+                reject(err);
+              }
 
-            const albums = data.map(data => {
-              const album = new Album(data.name, data.artist, data.tracks, data.images);
-              album._id = data._id;
-              return album;
+              const albums = data.map(data => {
+                const album = new Album(data.name, data.artist, data.tracks, data.images);
+                album._id = data._id;
+                return album;
+              });
+
+              resolve(new Page(index, offset, albums, total));
             });
-
-            resolve(new Page(index, offset, albums, data.length));
           });
         });
       });
@@ -31,9 +33,12 @@ class Album {
       .then(collection => {
         return collection.findOne({ _id: new ObjectID(id) });
       }).then(data => {
-        const album = new Album(data.name, data.artist, data.tracks, data.images);
-        album._id = data._id;
-        return album;
+        if (data) {
+          const album = new Album(data.name, data.artist, data.tracks, data.images);
+          album._id = data._id;
+          return album;
+        }
+        return null;
       });
   }
 
