@@ -237,7 +237,7 @@ router.post('/:id(\\w{24})/tracks', (req, res) => {
             idArray.push(_track._id);
           });
 
-          Track.getTracks(idArray).then(tracks => {
+          Track.getTracksById(idArray).then(tracks => {
             var promiseList = [];
             tracks.forEach(_track => {
               _track.trackNumber = _.find(req.body.tracks, (o) => {

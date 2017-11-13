@@ -1,22 +1,27 @@
 const assert = require('assert');
 const should = require('should');
+const request = require('supertest');
 
 const app = require('../src/server.js')
 const Album = require('../src/modules/album')
-const Track = require('../src/modules/Track')
-const request = require('supertest');
+
+const Database = require('../src/lib/database')
+
 
 describe('Album Test', () => {
 
   var album = null;
 
   before(() => {
-    // console.log('Server');
+    return Database.getConnection().then(conn => {
+      console.log('establish database connection success.');
+    });
   });
 
-  after(() => {
-    app.close();
-    process.exit();
+  after(function() {
+    app.close(() => {
+      Database.close();
+    });
   });
 
   beforeEach(() => {
@@ -45,8 +50,8 @@ describe('Album Test', () => {
         .expect('Content-Type', /json/)
         .end((err, res) => {
           if (err) {
-          	console.log(err);
-          	return done(err);
+            console.log(err);
+            return done(err);
           }
 
           res.body.data.should.be.instanceof(Array);

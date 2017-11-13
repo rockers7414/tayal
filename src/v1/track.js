@@ -50,6 +50,7 @@ router.delete('/:id(\\w{24})', (req, res) => {
     });
 });
 
+
 router.get('*', (req, res) => {
   res.status(404).send(new Response.Error(new Err.ResourceNotFound()));
 });
