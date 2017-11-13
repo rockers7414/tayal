@@ -5,8 +5,6 @@ const app = require('../src/server.js')
 const Album = require('../src/modules/album')
 const Track = require('../src/modules/Track')
 const request = require('supertest');
-const express = require('express');
-
 
 describe('Album Test', () => {
 
