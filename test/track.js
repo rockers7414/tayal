@@ -12,9 +12,9 @@ describe('Track Test', () => {
   var track = null;
 
   before(() => {
-  	return Database.getConnection().then(conn => {
-  		console.log('establish database connection success.');
-  	});
+    return Database.getConnection().then(conn => {
+      console.log('establish database connection success.');
+    });
   });
 
   after(function() {
@@ -33,7 +33,7 @@ describe('Track Test', () => {
     return Track.deleteTrack(track._id);
   });
 
-  describe('#getAllTracks()', () => {
+  describe('#Tracks Web API', () => {
     it('should respond with JSON array', (done) => {
       request(app)
         .get('/api/v1/tracks/')
@@ -44,9 +44,7 @@ describe('Track Test', () => {
           done();
         });
     });
-  });
 
-  describe('#getTracks(id)', () => {
     it('response with matching records', (done) => {
       request(app)
         .get('/api/v1/tracks/' + track._id)
@@ -61,7 +59,39 @@ describe('Track Test', () => {
           done();
         });
     });
-  });
 
+    it('update records and response with changed record', (done) => {
+      let name = 'Nothing on you';
+      let lyric = 'YOYOYOYO, go rock go rock boy ~~';
+      let trackNumber = '10';
+
+      request(app)
+        .put('/api/v1/tracks/' + track._id)
+        .send({
+          "name": name,
+          "lyric": lyric,
+          "trackNumber": trackNumber
+        })
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .end((err, res) => {
+          res.body.data.name.should.equal(name);
+          res.body.data.lyric.should.equal(lyric);
+          res.body.data.trackNumber.should.equal(trackNumber);
+          done();
+        });
+    });
+
+    it('delete records and respond true', (done) => {
+      request(app)
+        .delete('/api/v1/tracks/' + track._id)
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .end((err, res) => {
+          res.body.data.should.equal(true);
+          done();
+        });
+    });
+  });
 
 });

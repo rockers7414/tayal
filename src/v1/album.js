@@ -68,7 +68,7 @@ router.delete('/:id(\\w{24})', (req, res) => {
       );
 
       Promise.all(promiseList).then(result => {
-        res.send(new Response.Data(result));
+        res.send(new Response.Data(true));
       }).catch(err => {
         if (err instanceof Err.UnremovableError) {
           res.status(400);
