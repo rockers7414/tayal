@@ -2,7 +2,6 @@
 const Database = require('../lib/database');
 const ObjectID = require('mongodb').ObjectID;
 const Page = require('../objects/page');
-const Error = require('../objects/error');
 
 class Track {
 
@@ -50,7 +49,7 @@ class Track {
         idArray.forEach(id => {
           objIds.push(new ObjectID(id));
         });
-        return collection.find({ "_id": { $in: objIds } });
+        return collection.find({ '_id': { $in: objIds } });
       }).then(cursor => {
         return cursor.toArray().then(dataArray => {
           var result = [];
