@@ -48,7 +48,7 @@ router.post('/', (req, res) => {
 });
 
 /**
- * @api {post} /artists/:id Get artist matching by given id.
+ * @api {get} /artists/:id Get artist matching by given id.
  * @apiName GetArtist
  * @apiGroup Artists
  *

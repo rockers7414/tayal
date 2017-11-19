@@ -9,6 +9,18 @@ const Artist = require('../modules/artist');
 const Track = require('../modules/track');
 const _ = require('lodash');
 
+/**
+ * @api {get} /albums Get page of albums.
+ * @apiName GetAlbums
+ * @apiGroup Albums
+ *
+ * @apiParam {Number} [index=0] index Index of pagment.
+ * @apiParam {Number} [offset=50] offset Size of pagment.
+ *
+ * @apiSuccess {Object} collection Page of albums.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums
+ */
 router.get('/', (req, res) => {
   const index = req.query.index ? parseInt(req.query.index) : 0;
   const offset = req.query.offset ? parseInt(req.query.offset) : 50;
@@ -18,6 +30,21 @@ router.get('/', (req, res) => {
   });
 });
 
+/**
+ * @api {get} /albums/:id Get album matching by given id.
+
+
+ 
+ * @apiName GetAlbums
+ * @apiGroup Albums
+ *
+ * @apiParam {Number} [index=0] index Index of pagment.
+ * @apiParam {Number} [offset=50] offset Size of pagment.
+ *
+ * @apiSuccess {Object} collection Page of albums.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums
+ */
 router.get('/:id(\\w{24})', (req, res) => {
   Album.getAlbum(req.params.id)
     .then(album => {
