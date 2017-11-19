@@ -34,7 +34,6 @@ router.get('/', (req, res) => {
  * @api {get} /albums/:id Get album matching by given id.
 
 
- 
  * @apiName GetAlbums
  * @apiGroup Albums
  *
