@@ -2,9 +2,6 @@
   "name": "tayal",
   "version": "1.0.0",
   "license": "MIT",
-  "scripts": {
-    "test": "mocha"
-  },
   "dependencies": {
     "body-parser": "^1.18.2",
     "express": "^4.16.1",
@@ -13,10 +10,6 @@
   },
   "devDependencies": {
     "apidoc": "^0.17.6",
-    "eslint": "^4.8.0",
-    "nodemon": "^1.12.1",
-    "should": "^13.1.3",
-    "supertest": "^3.0.0",
     "grunt": "^1.0.1",
     "grunt-eslint": "^20.1.0",
     "grunt-nodemon": "^0.4.2",
