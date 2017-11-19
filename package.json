@@ -9,8 +9,10 @@
     "mongodb": "^2.2.31"
   },
   "devDependencies": {
-    "eslint": "^4.8.0",
     "apidoc": "^0.17.6",
-    "nodemon": "^1.12.1"
+    "grunt": "^1.0.1",
+    "grunt-eslint": "^20.1.0",
+    "grunt-nodemon": "^0.4.2",
+    "load-grunt-config": "^0.19.2"
   }
 }
