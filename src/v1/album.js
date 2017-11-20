@@ -17,7 +17,11 @@ const _ = require('lodash');
  * @apiParam {Number} [index=0] index Index of pagment.
  * @apiParam {Number} [offset=50] offset Size of pagment.
  *
- * @apiSuccess {Object} collection Page of albums.
+ * @apiSuccess {Object} data Collection Page of albums.
+ * @apiSuccess {String} type Collection.
+ * @apiSuccess {Integer} index Index of Page.
+ * @apiSuccess {Integer} offset Offset.
+ * @apiSuccess {Integer} total Row count of data.
  *
  * @apiSampleRequest http://localhost:3000/api/v1/albums
  */
@@ -32,17 +36,14 @@ router.get('/', (req, res) => {
 
 /**
  * @api {get} /albums/:id Get album matching by given id.
-
-
- * @apiName GetAlbums
+ * @apiName GetAlbum
  * @apiGroup Albums
  *
- * @apiParam {Number} [index=0] index Index of pagment.
- * @apiParam {Number} [offset=50] offset Size of pagment.
+ * @apiParam {String} :id Album's id
  *
- * @apiSuccess {Object} collection Page of albums.
+ * @apiSuccess {Object} data Collection Page of album.
  *
- * @apiSampleRequest http://localhost:3000/api/v1/albums
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:id
  */
 router.get('/:id(\\w{24})', (req, res) => {
   Album.getAlbum(req.params.id)
@@ -51,6 +52,17 @@ router.get('/:id(\\w{24})', (req, res) => {
     });
 });
 
+/**
+ * @api {post} /albums Create new album.
+ * @apiName PostAlbum
+ * @apiGroup Albums
+ *
+ * @apiParam {String} name Album's name.
+ *
+ * @apiSuccess {Object} data Collection of album.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums
+ */
 router.post('/', (req, res) => {
   if (!req.body.name || req.body.name == '') {
     res.status(400)
@@ -62,6 +74,17 @@ router.post('/', (req, res) => {
   }
 });
 
+/**
+ * @api {delete} /albums/:id Delete specify album.
+ * @apiName DeleteAlbum
+ * @apiGroup Albums
+ *
+ * @apiParam {String} :id Album's id.
+ *
+ * @apiSuccess {Boolean} data Result of album delete.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:id
+ */
 router.delete('/:id(\\w{24})', (req, res) => {
   /** check constraint */
   Album.getAlbum(req.params.id).then(album => {
@@ -105,6 +128,19 @@ router.delete('/:id(\\w{24})', (req, res) => {
   });
 });
 
+/**
+ * @api {put} /albums/:id Update specify album info.
+ * @apiName UpdateAlbum
+ * @apiGroup Albums
+ *
+ * @apiParam {String} :id Album's id.
+ * @apiParam {String} [name] Album's name.
+ * @apiParam {String} [images] Album's images.
+ *
+ * @apiSuccess {Object} data Collection of album.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:id
+ */
 router.put('/:id(\\w{24})', (req, res) => {
   if (!req.body.name || req.body.name == '') {
     res.status(400)
@@ -125,6 +161,18 @@ router.put('/:id(\\w{24})', (req, res) => {
   }
 });
 
+/**
+ * @api {post} /albums/:id/artist Create relationship between specify album and artist.
+ * @apiName AlbumSetArtist
+ * @apiGroup Albums
+ *
+ * @apiParam {String} :id Album's id.
+ * @apiParam {String} artist Artist's id.
+ *
+ * @apiSuccess {Object} data Collection of album.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:id/artist
+ */
 router.post('/:id(\\w{24})/artist', (req, res) => {
   if (!req.body.artist || req.body.artist == '') {
     res.status(400)
@@ -152,6 +200,17 @@ router.post('/:id(\\w{24})/artist', (req, res) => {
   }
 });
 
+/**
+ * @api {delete} /albums/:id/artist Remove relationship between specify album and artist.
+ * @apiName AlbumRemoveArtist
+ * @apiGroup Albums
+ *
+ * @apiParam {String} :id Album's id.
+ *
+ * @apiSuccess {Object} data Collection of album.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:id/artist
+ */
 router.delete('/:id(\\w{24})/artist', (req, res) => {
   Album.getAlbum(req.params.id).then(album => {
     if (!album) {
@@ -171,6 +230,18 @@ router.delete('/:id(\\w{24})/artist', (req, res) => {
   });
 });
 
+/**
+ * @api {put} /albums/:id/artist Update relationship between specify album and artist.
+ * @apiName AlbumUpdateArtist
+ * @apiGroup Albums
+ *
+ * @apiParam {String} :id Album's id.
+ * @apiParam {String} artist Artist's id.
+ *
+ * @apiSuccess {Object} data Collection of album.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:id/artist
+ */
 router.put('/:id(\\w{24})/artist', (req, res) => {
   if (!req.body.artist || req.body.artist == '') {
     res.status(400)
@@ -212,6 +283,18 @@ router.put('/:id(\\w{24})/artist', (req, res) => {
   }
 });
 
+/**
+ * @api {post} /albums/:id/tracks Create relationship between specify album and multiple tracks.
+ * @apiName AlbumSetTracks
+ * @apiGroup Albums
+ *
+ * @apiParam {String} :id Album's id.
+ * @apiParam {Array} tracks Array of track's id.
+ *
+ * @apiSuccess {Object} data Collection of album.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:id/tracks
+ */
 router.post('/:id(\\w{24})/tracks', (req, res) => {
   Album.getAlbum(req.params.id).then(album => {
     if (!album) {
@@ -285,20 +368,32 @@ router.post('/:id(\\w{24})/tracks', (req, res) => {
   });
 });
 
+/**
+ * @api {post} /albums/:id/track Create relationship between specify album and track.
+ * @apiName AlbumSetTrack
+ * @apiGroup Albums
+ *
+ * @apiParam {String} :id Album's id.
+ * @apiParam {String} track Track's id.
+ *
+ * @apiSuccess {Object} data Collection of album.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:id/track
+ */
 router.post('/:id(\\w{24})/track', (req, res) => {
   Album.getAlbum(req.params.id).then(album => {
     if (!album) {
       res.status(400)
         .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
     } else {
-      if (!req.body._id || req.body._id == '') {
+      if (!req.body.track || req.body.track == '') {
         res.status(400)
           .send(new Response.Error(new Err.InvalidParam(['track is required'])));
       } else if (!req.body.trackNumber || req.body.trackNumber == '') {
         res.status(400)
           .send(new Response.Error(new Err.InvalidParam(['track number is required'])));
       } else {
-        Track.getTrack(req.body._id).then(track => {
+        Track.getTrack(req.body.track).then(track => {
           if (!track) {
             res.status(400)
               .send(new Response.Error(new Err.ResourceNotFound(['track not found'])));
@@ -333,6 +428,18 @@ router.post('/:id(\\w{24})/track', (req, res) => {
   });
 });
 
+/**
+ * @api {delete} /albums/:albumId/tracks/:trackId Remove relationship between specify album and track.
+ * @apiName AlbumSetTrack
+ * @apiGroup Albums
+ *
+ * @apiParam {String} :albumId Album's id.
+ * @apiParam {String} :trackId Track's id.
+ *
+ * @apiSuccess {Object} data Collection of album.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:albumId/tracks/:trackId
+ */
 router.delete('/:albumId(\\w{24}/tracks/:trackId)', (req, res) => {
   Album.getAlbum(req.params.albumId).then(album => {
     if (!album) {

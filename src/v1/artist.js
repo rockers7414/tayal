@@ -14,7 +14,11 @@ const Album = require('../modules/album');
  * @apiParam {Number} [index=0] index Index of pagment.
  * @apiParam {Number} [offset=50] offset Size of pagment.
  *
- * @apiSuccess {Object} collection Page of artists.
+ * @apiSuccess {Object} data Page of artists.
+ * @apiSuccess {String} type Collection.
+ * @apiSuccess {Integer} index Index of Page.
+ * @apiSuccess {Integer} offset Offset.
+ * @apiSuccess {Integer} total Row count of data.
  *
  * @apiSampleRequest http://localhost:3000/api/v1/artists
  */
@@ -31,9 +35,9 @@ router.get('/', (req, res) => {
  * @apiName PostArtist
  * @apiGroup Artists
  *
- * @apiParam {String} [name] artist's name.
+ * @apiParam {String} name Artist's name.
  *
- * @apiSuccess {Object} collection of artist.
+ * @apiSuccess {Object} data Collection of artist.
  *
  * @apiSampleRequest http://localhost:3000/api/v1/artists
  */
@@ -52,9 +56,9 @@ router.post('/', (req, res) => {
  * @apiName GetArtist
  * @apiGroup Artists
  *
- * @apiParam {String} [id] artist's id.
+ * @apiParam {String} :id Artist's id.
  *
- * @apiSuccess {Object} collection of artist.
+ * @apiSuccess {Object} data Collection of artist.
  *
  * @apiSampleRequest http://localhost:3000/api/v1/artists/:id
  */
@@ -69,10 +73,11 @@ router.get('/:id(\\w{24})', (req, res) => {
  * @apiName UpdateArtist
  * @apiGroup Artists
  *
- * @apiParam {String} [id] artist's id.
- * @apiParam {String} [name] artist's name.
+ * @apiParam {String} :id Artist's id.
+ * @apiParam {String} [name] Artist's name.
+ * @apiParam {Array} [albums] Array of Album.toSimple().
  *
- * @apiSuccess {Object} collection of artist.
+ * @apiSuccess {Object} data Collection of artist.
  *
  * @apiSampleRequest http://localhost:3000/api/v1/artists/:id
  */
@@ -96,9 +101,9 @@ router.put('/:id(\\w{24})', (req, res) => {
  * @apiName DeleteArtist
  * @apiGroup Artists
  *
- * @apiParam {String} [id] artist's id.
+ * @apiParam {String} id Artist's id.
  *
- * @apiSuccess {Boolean} Result of artist delete.
+ * @apiSuccess {Boolean} data Result of artist delete.
  *
  * @apiSampleRequest http://localhost:3000/api/v1/artists/:id
  */
