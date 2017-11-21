@@ -108,7 +108,7 @@ router.put('/:id(\\w{24})', (req, res) => {
 
         promiseList.push(
           Album.getAlbum(track.album._id).then(album => {
-            let targetTrackNumber = _.find(album.tracks, (o) => {
+            const targetTrackNumber = _.find(album.tracks, (o) => {
               return o.trackNumber == req.body.trackNumber;
             });
 
@@ -128,7 +128,7 @@ router.put('/:id(\\w{24})', (req, res) => {
       track.trackNumber = req.body.trackNumber;
       promiseList.push(track.save());
 
-      Promise.all(promiseList).then(result => {
+      Promise.all(promiseList).then(() => {
         res.status(200).send(new Response.Data(track));
       });
     });
@@ -170,7 +170,7 @@ router.delete('/:id(\\w{24})', (req, res) => {
         Track.deleteTrack(req.params.id)
       );
 
-      Promise.all(promiseList).then(result => {
+      Promise.all(promiseList).then(() => {
         res.send(new Response.Data(true));
       }).catch(err => {
         if (err instanceof Err.UnremovableError) {
