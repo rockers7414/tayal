@@ -14,7 +14,11 @@ const Album = require('../modules/album');
  * @apiParam {Number} [index=0] index Index of pagment.
  * @apiParam {Number} [offset=50] offset Size of pagment.
  *
- * @apiSuccess {Object} collection Page of artists.
+ * @apiSuccess {Object} data Page of artists.
+ * @apiSuccess {String} type Collection.
+ * @apiSuccess {Integer} index Index of Page.
+ * @apiSuccess {Integer} offset Offset.
+ * @apiSuccess {Integer} total Row count of data.
  *
  * @apiSampleRequest http://localhost:3000/api/v1/artists
  */
@@ -26,6 +30,17 @@ router.get('/', (req, res) => {
   });
 });
 
+/**
+ * @api {post} /artists Create new artist.
+ * @apiName PostArtist
+ * @apiGroup Artists
+ *
+ * @apiParam {String} name Artist's name.
+ *
+ * @apiSuccess {Object} data Collection of artist.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/artists
+ */
 router.post('/', (req, res) => {
   if (!req.body.name || req.body.name == '') {
     res.status(400)
@@ -36,12 +51,36 @@ router.post('/', (req, res) => {
   });
 });
 
+/**
+ * @api {get} /artists/:id Get artist matching by given id.
+ * @apiName GetArtist
+ * @apiGroup Artists
+ *
+ * @apiParam {String} :id Artist's id.
+ *
+ * @apiSuccess {Object} data Collection of artist.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/artists/:id
+ */
 router.get('/:id(\\w{24})', (req, res) => {
   Artist.getArtist(req.params.id).then(artist => {
     res.status(200).send(new Response.Data(artist));
   });
 });
 
+/**
+ * @api {put} /artists/:id Update specify artist info.
+ * @apiName UpdateArtist
+ * @apiGroup Artists
+ *
+ * @apiParam {String} :id Artist's id.
+ * @apiParam {String} [name] Artist's name.
+ * @apiParam {Array} [albums] Array of Album.toSimple().
+ *
+ * @apiSuccess {Object} data Collection of artist.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/artists/:id
+ */
 router.put('/:id(\\w{24})', (req, res) => {
   if (!req.body.name || req.body.name == '') {
     res.status(400)
@@ -57,6 +96,17 @@ router.put('/:id(\\w{24})', (req, res) => {
     });
 });
 
+/**
+ * @api {delete} /artists/:id Delete specify artist.
+ * @apiName DeleteArtist
+ * @apiGroup Artists
+ *
+ * @apiParam {String} id Artist's id.
+ *
+ * @apiSuccess {Boolean} data Result of artist delete.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/artists/:id
+ */
 router.delete('/:id(\\w{24})', (req, res) => {
   Artist.deleteArtist(req.params.id)
     .then(result => res.send(new Response.Data(result)))
@@ -65,22 +115,6 @@ router.delete('/:id(\\w{24})', (req, res) => {
         res.status(400);
       }
       res.send(new Response.Error(e));
-    });
-});
-
-router.post('/:id(\\w{24})/albums', (req, res) => {
-  if (!req.body.name || req.body.name == '') {
-    res.status(400)
-      .send(new Response.Error(new Err.InvalidParam(['name is required'])));
-  }
-  Artist.getArtist(req.params.id)
-    .then(artist => {
-      new Album(req.body.name, artist.toSimple()).save()
-        .then(album => {
-          artist.albums.push(album.toSimple());
-          artist.save().then(artist => res.status(200).send(new Response.Data(artist)));
-        });
-
     });
 });
 

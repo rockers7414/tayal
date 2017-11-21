@@ -41,7 +41,7 @@ class Track {
       });
   }
 
-  static getTracks(idArray) {
+  static getTracksById(idArray) {
     return Database.getCollection('tracks')
       .then(collection => {
         /** refactor idArray */
