@@ -4,6 +4,7 @@ const request = require('supertest');
 
 const app = require('../src/server.js')
 const Album = require('../src/modules/album')
+const Artist = require('../src/modules/artist')
 
 const Database = require('../src/lib/database')
 
@@ -25,13 +26,22 @@ describe('Album Test', () => {
   });
 
   beforeEach(() => {
-    return new Album('Perfect Strangers', null, [], null).save().then(_album => {
-      album = _album;
+    return new Artist('Abner', [], null).save().then(artist => {
+      return new Album('Perfect Strangers', artist.toSimple(), [], null).save().then(_album => {
+        album = _album;
+        return Artist.getArtist(artist._id).then(artist => {
+          artist.albums.push(_album.toSimple());
+          return artist.save();
+        });
+      });
     });
   });
 
   afterEach(() => {
-    return Album.deleteAlbum(album._id);
+    var artistId = album.artist._id;
+    return Album.deleteAlbum(album._id).then(() => {
+      return Artist.deleteArtist(artistId);
+    });
   });
 
   describe('#find(id)', () => {
@@ -42,7 +52,7 @@ describe('Album Test', () => {
     });
   });
 
-  describe('#queryAlbum()', () => {
+  describe('#queryAlbum', () => {
     it('should respond with JSON array', (done) => {
       request(app)
         .get('/api/v1/albums/')
@@ -59,5 +69,44 @@ describe('Album Test', () => {
         });
     });
   });
+
+  describe('#deleteAlbum', () => {
+    it('should respond true while delete album', (done) => {
+      request(app)
+        .delete('/api/v1/albums/' + album._id)
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .end((err, res) => {
+          if (err) {
+            console.log(err);
+            return done(err);
+          }
+
+          res.body.data.should.equal(true);
+          done();
+        });
+    });
+  });
+
+  // describe('#AlbumUpdateArtist', () => {
+      //   it('should respond the collection of album with artist\'s toSimple()', (done) => {
+
+      //     // new Artist('Abner', [], null).save()
+
+      //     request(app)
+      //       .post('/api/v1/albums/' + album._id + '/artist')
+      //       .send({
+      //         "artist": "XXXX"
+      //       })
+      //       .expect(200)
+      //       .expect('Content-Type', /json/)
+      //       .end((err, res) => {
+      //         res.body.
+
+
+      //         done();
+      //       });
+      //   });
+      // });
 
 });

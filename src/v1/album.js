@@ -74,15 +74,6 @@ router.post('/', (req, res) => {
   }
 });
 
-
-/** ==============================================================
- * router.delete() revise done. but not test yet.
- *
- *
- * ===============================================================
- */
-
-
 /**
  * @api {delete} /albums/:id Delete specify album.
  * @apiName DeleteAlbum
@@ -95,7 +86,6 @@ router.post('/', (req, res) => {
  * @apiSampleRequest http://localhost:3000/api/v1/albums/:id
  */
 router.delete('/:id(\\w{24})', (req, res) => {
-
   Album.getAlbum(req.params.id).then(album => {
     if (!album) {
       throw { 'code': 200, 'response': new Response.Data(true) };
@@ -103,18 +93,21 @@ router.delete('/:id(\\w{24})', (req, res) => {
     return album;
   }).then(album => {
     if (album.tracks && album.tracks.length > 0) {
-      throw { 'code': 400, 'msg': 'has related tracks' };
+      throw {
+        'code': 400,
+        'response': new Response.Error(new Err.UnremovableError('has related tracks'))
+      };
+
     }
     return album;
   }).then(album => {
     if (album.artist) {
-      return Artist.getArtist(album.artist._id.toHexString()).then(artist => {
+      return Artist.getArtist(album.artist._id).then(artist => {
         if (artist.albums) {
           _.remove(artist.albums, (_album) => {
-            return _album._id.equals(album._id);
+            return _album._id == album._id;
           });
         }
-
         return artist.save().then(() => {
           return album;
         });
@@ -156,13 +149,19 @@ router.put('/:id(\\w{24})', (req, res) => {
       } else {
         album.name = req.body.name;
         album.images = req.body.images;
-        album.save().then(result => {
+        album.save().then(() => {
           res.send(new Response.Data(album));
         });
       }
     });
   }
 });
+
+/** ===============================================
+
+    post album/:id/artist not test yet.
+
+    =============================================== */
 
 /**
  * @api {post} /albums/:id/artist Create relationship between specify album and artist.
@@ -177,28 +176,50 @@ router.put('/:id(\\w{24})', (req, res) => {
  * @apiSampleRequest http://localhost:3000/api/v1/albums/:id/artist
  */
 router.post('/:id(\\w{24})/artist', (req, res) => {
+  var artist = null;
   if (!req.body.artist || req.body.artist == '') {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['artist is required'])));
   } else {
-    Artist.getArtist(req.body.artist).then(artist => {
-      if (!artist) {
-        res.status(400)
-          .send(new Response.Error(new Err.ResourceNotFound(['artist not found'])));
-      } else {
-        Album.getAlbum(req.params.id).then(album => {
-          if (album.artist) {
-            return res.status(400)
-              .send(new Response.Error(new Err.IllegalOperationError(['artist already set'])));
-          } else {
-            artist.albums.push(album.toSimple());
-            album.artist = artist.toSimple();
-            Promise.all([artist.save(), album.save()]).then(result => {
-              res.send(new Response.Data(album));
-            });
-          }
-        });
+    Artist.getArtist(req.body.artist).then(_artist => {
+      if (!_artist) {
+        throw {
+          'code': 400,
+          'response': new Response.Error(new Err.ResourceNotFound(['artist not found']))
+        };
       }
+      artist = _artist;
+    }).then(() => {
+      return Album.getAlbum(req.params.id).then(album => {
+        if (!album) {
+          throw {
+            'code': 400,
+            'response': new Response.Error(new Err.ResourceNotFound(['album not found']))
+          };
+        }
+        return album;
+      });
+    }).then(album => {
+      if (album.artist) {
+        throw {
+          'code': 400,
+          'response': new Response.Error(new Err.IllegalOperationError(['artist already set']))
+        };
+      }
+      return album;
+    }).then(album => {
+      artist.albums.push(album.toSimple());
+      album.artist = artist.toSimple();
+      return artist.save().then(() => {
+        return album;
+      });
+    }).then(album => {
+      album.save().then(album => {
+        res.send(new Response.Data(album));
+      });
+    }).catch(res => {
+      res.status(res.code)
+        .send(res.response);
     });
   }
 });
