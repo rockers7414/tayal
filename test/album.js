@@ -88,25 +88,48 @@ describe('Album Test', () => {
     });
   });
 
-  // describe('#AlbumUpdateArtist', () => {
-      //   it('should respond the collection of album with artist\'s toSimple()', (done) => {
+  describe('#AlbumUpdateArtist', () => {
+    var tmpAlbum = null;
+    var tmpArtist = null;
 
-      //     // new Artist('Abner', [], null).save()
+    before(() => {
+      return new Artist('Abner', [], null).save().then(_artist => {
+        tmpArtist = _artist;
+        return new Album('Perfect Strangers II', null, [], null).save().then(_album => {
+          tmpAlbum = _album;
+        });
+      });
+    });
 
-      //     request(app)
-      //       .post('/api/v1/albums/' + album._id + '/artist')
-      //       .send({
-      //         "artist": "XXXX"
-      //       })
-      //       .expect(200)
-      //       .expect('Content-Type', /json/)
-      //       .end((err, res) => {
-      //         res.body.
+    after(() => {
+      return Album.deleteAlbum(tmpAlbum._id).then(() => {
+        return Artist.deleteArtist(tmpArtist._id);
+      });
+    });
 
-
-      //         done();
-      //       });
-      //   });
-      // });
-
+    it('should respond album with artist which just post', (done) => {
+      request(app)
+        .post('/api/v1/albums/' + tmpAlbum._id + '/artist')
+        .send({
+          "artist": tmpArtist._id
+        })
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .then(res => {
+          res.body.data.name.should.equal(tmpAlbum.name);
+          res.body.data.artist._id.should.equal(tmpArtist._id);
+          return res;
+        })
+        .then(res => {
+          return Album.getAlbum(res.body.data._id).then(album => {
+            album.artist._id.toHexString().should.equal(tmpArtist._id);
+            done();
+          });
+        })
+        .catch(err => {
+          console.log(err);
+          done(err);
+        });
+    });
+  });
 });

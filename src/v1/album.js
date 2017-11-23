@@ -157,12 +157,6 @@ router.put('/:id(\\w{24})', (req, res) => {
   }
 });
 
-/** ===============================================
-
-    post album/:id/artist not test yet.
-
-    =============================================== */
-
 /**
  * @api {post} /albums/:id/artist Create relationship between specify album and artist.
  * @apiName AlbumSetArtist
@@ -223,6 +217,12 @@ router.post('/:id(\\w{24})/artist', (req, res) => {
     });
   }
 });
+
+/** ===========================================
+
+    Revise to here. 2017/11/24 mid-night.
+
+    =========================================== */
 
 /**
  * @api {delete} /albums/:id/artist Remove relationship between specify album and artist.
