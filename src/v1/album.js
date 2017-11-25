@@ -75,7 +75,7 @@ router.post('/', (req, res) => {
 });
 
 /**
- * @api {delete} /albums/:id Delete specify album.
+ * @api {delete} /albums/:id Delete specific album.
  * @apiName DeleteAlbum
  * @apiGroup Albums
  *
@@ -118,14 +118,14 @@ router.delete('/:id(\\w{24})', (req, res) => {
     Album.deleteAlbum(album._id.toHexString()).then(result => {
       res.send(new Response.Data(result));
     });
-  }).catch(res => {
-    res.status(res.code)
-      .send(res.response);
+  }).catch(ex => {
+    res.status(ex.code)
+      .send(ex.response);
   });
 });
 
 /**
- * @api {put} /albums/:id Update specify album info.
+ * @api {put} /albums/:id Update specific album info.
  * @apiName UpdateAlbum
  * @apiGroup Albums
  *
@@ -158,7 +158,7 @@ router.put('/:id(\\w{24})', (req, res) => {
 });
 
 /**
- * @api {post} /albums/:id/artist Create relationship between specify album and artist.
+ * @api {post} /albums/:id/artist Create relationship between specific album and artist.
  * @apiName AlbumSetArtist
  * @apiGroup Albums
  *
@@ -211,21 +211,15 @@ router.post('/:id(\\w{24})/artist', (req, res) => {
       album.save().then(album => {
         res.send(new Response.Data(album));
       });
-    }).catch(res => {
-      res.status(res.code)
-        .send(res.response);
+    }).catch(ex => {
+      res.status(ex.code)
+        .send(ex.response);
     });
   }
 });
 
-/** ===========================================
-
-    Revise to here. 2017/11/24 mid-night.
-
-    =========================================== */
-
 /**
- * @api {delete} /albums/:id/artist Remove relationship between specify album and artist.
+ * @api {delete} /albums/:id/artist Remove relationship between specific album and artist.
  * @apiName AlbumRemoveArtist
  * @apiGroup Albums
  *
@@ -238,24 +232,39 @@ router.post('/:id(\\w{24})/artist', (req, res) => {
 router.delete('/:id(\\w{24})/artist', (req, res) => {
   Album.getAlbum(req.params.id).then(album => {
     if (!album) {
-      res.status(400)
-        .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
-    } else {
-      Artist.getArtist(album.artist._id.toHexString()).then(artist => {
+      throw {
+        'code': 400,
+        'response': new Response.Error(new Err.ResourceNotFound(['album not found']))
+      };
+    }
+    return album;
+  }).then(album => {
+    if (album.artist) {
+      return Artist.getArtist(album.artist._id).then(artist => {
         _.remove(artist.albums, (_album) => {
-          return _album._id.equals(album._id);
+          return _album._id == album._id;
         });
-        album.artist = null;
-        Promise.all([artist.save(), album.save()]).then(result => {
-          res.send(new Response.Data(album));
+        return artist.save().then(() => {
+          return album;
         });
       });
     }
+    return album;
+  }).then(album => {
+    album.artist = null;
+    album.save().then(album => {
+      res.send(new Response.Data(album));
+    });
+  }).catch(ex => {
+    res.status(ex.code)
+      .send(ex.response);
   });
 });
 
+/** ====================================================================== */
+
 /**
- * @api {put} /albums/:id/artist Update relationship between specify album and artist.
+ * @api {put} /albums/:id/artist Update relationship between specific album and artist.
  * @apiName AlbumUpdateArtist
  * @apiGroup Albums
  *
@@ -308,7 +317,7 @@ router.put('/:id(\\w{24})/artist', (req, res) => {
 });
 
 /**
- * @api {post} /albums/:id/tracks Create relationship between specify album and multiple tracks.
+ * @api {post} /albums/:id/tracks Create relationship between specific album and multiple tracks.
  * @apiName AlbumSetTracks
  * @apiGroup Albums
  *
@@ -393,7 +402,7 @@ router.post('/:id(\\w{24})/tracks', (req, res) => {
 });
 
 /**
- * @api {delete} /albums/:albumId/tracks/:trackId Remove relationship between specify album and track.
+ * @api {delete} /albums/:albumId/tracks/:trackId Remove relationship between specific album and track.
  * @apiName AlbumSetTrack
  * @apiGroup Albums
  *
