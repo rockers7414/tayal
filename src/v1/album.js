@@ -107,10 +107,11 @@ router.delete('/:id(\\w{24})', (req, res) => {
           _.remove(artist.albums, (_album) => {
             return _album._id == album._id;
           });
+          return artist.save().then(() => {
+            return album;
+          });
         }
-        return artist.save().then(() => {
-          return album;
-        });
+        return album;
       });
     }
     return album;
@@ -261,8 +262,6 @@ router.delete('/:id(\\w{24})/artist', (req, res) => {
   });
 });
 
-/** ====================================================================== */
-
 /**
  * @api {put} /albums/:id/artist Update relationship between specific album and artist.
  * @apiName AlbumUpdateArtist
@@ -282,39 +281,52 @@ router.put('/:id(\\w{24})/artist', (req, res) => {
   } else {
     Album.getAlbum(req.params.id).then(album => {
       if (!album) {
-        res.status(400)
-          .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
-      } else {
-        var promiseList = [];
-        /** Remove album from ori artist. */
-        if (album.artist) {
-          promiseList.push(Artist.getArtist(album.artist._id.toHexString()).then(artist => {
-            _.remove(artist.albums, (_album) => {
-              return _album._id.equals(album._id);
-            });
-            return artist.save();
-          }));
-        }
-
-        /** Add album to new artist */
-        promiseList.push(Artist.getArtist(req.body.artist).then(artist => {
-          var _album = _.find(artist.albums, (o) => {
-            return o._id.equals(album._id);
-          });
-          if (!_album)
-            artist.albums.push(album.toSimple());
-          album.artist = artist.toSimple();
-          return artist.save();
-        }));
-
-        promiseList.push(album.save());
-        Promise.all(promiseList).then(result => {
-          res.send(new Response.Data(album));
-        });
+        throw {
+          'code': 400,
+          'response': new Response.Error(new Err.ResourceNotFound(['album not found']))
+        };
       }
+      return album;
+    }).then(album => {
+      return Artist.getArtist(req.body.artist).then(artist => {
+        if (!artist) {
+          throw {
+            'code': 400,
+            'response': new Response.Error(new Err.ResourceNotFound(['artist not found']))
+          };
+        }
+        return artist;
+      }).then(artist => {
+        if (album.artist) {
+          Artist.getArtist(album.artist._id).then(oriArtist => {
+            _.remove(oriArtist.albums, (_album) => {
+              return _album._id == album._id;
+            });
+            return oriArtist.save().then(() => {
+              return artist;
+            });
+          });
+        }
+        return artist;
+      }).then(artist => {
+        album.artist = artist.toSimple();
+        artist.albums.push(album.toSimple());
+        return artist.save().then(() => {
+          return album;
+        });
+      });
+    }).then(album => {
+      album.save().then(album => {
+        res.send(new Response.Data(album));
+      });
+    }).catch(ex => {
+      res.status(ex.code)
+        .send(ex.response);
     });
   }
 });
+
+/** ====================================================================== */
 
 /**
  * @api {post} /albums/:id/tracks Create relationship between specific album and multiple tracks.

@@ -5,6 +5,7 @@ const request = require('supertest');
 const app = require('../src/server.js')
 const Album = require('../src/modules/album')
 const Artist = require('../src/modules/artist')
+const _ = require('lodash');
 
 const Database = require('../src/lib/database')
 
@@ -112,6 +113,53 @@ describe('Album Test', () => {
   });
 
   describe('#AlbumUpdateArtist', () => {
+    var extraArtist = null;
+
+    before(() => {
+      return new Artist('Abner', [], null).save().then(artist => {
+        extraArtist = artist;
+      });
+    });
+
+    after(() => {
+      return Album.deleteAlbum(album._id).then(() => {
+        return Artist.deleteArtist(extraArtist._id);
+      });
+    });
+
+    it('should respond album with updated artist', (done) => {
+      request(app)
+        .put('/api/v1/albums/' + album._id + '/artist')
+        .send({
+          "artist": extraArtist._id
+        })
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .then(res => {
+          res.body.data.artist._id.should.equal(extraArtist._id);
+          res.body.data.artist.name.should.equal(extraArtist.name);
+        })
+        .then(() => {
+          return Artist.getArtist(extraArtist._id).then(artist => {
+            var newAlbum = _.find(artist.albums, _album => {
+              return _album._id == album._id;
+            });
+            (newAlbum != null).should.be.ok();
+          });
+        })
+        .then(() => {
+          return Album.getAlbum(album._id).then(album => {
+            album.artist._id.toHexString().should.equal(extraArtist._id);
+            done();
+          });
+        }).catch(err => {
+          console.log(err);
+          done(err);
+        });
+    });
+  });
+
+  describe('#AlbumSetArtist', () => {
     var tmpAlbum = null;
     var tmpArtist = null;
 
