@@ -326,8 +326,6 @@ router.put('/:id(\\w{24})/artist', (req, res) => {
   }
 });
 
-/** =====================delete track done, but not test yet. ==================== */
-
 /**
  * @api {delete} /albums/:albumId/tracks/:trackId Remove relationship between specific album and track.
  * @apiName AlbumSetTrack
@@ -376,6 +374,7 @@ router.delete('/:albumId(\\w{24})/tracks/:trackId(\\w{24})', (req, res) => {
   });
 });
 
+/** ========================================================================= */
 /**
  * @api {post} /albums/:id/tracks Create relationship between specific album and multiple tracks.
  * @apiName AlbumSetTracks
