@@ -326,7 +326,55 @@ router.put('/:id(\\w{24})/artist', (req, res) => {
   }
 });
 
-/** ====================================================================== */
+/** =====================delete track done, but not test yet. ==================== */
+
+/**
+ * @api {delete} /albums/:albumId/tracks/:trackId Remove relationship between specific album and track.
+ * @apiName AlbumSetTrack
+ * @apiGroup Albums
+ *
+ * @apiParam {String} :albumId Album's id.
+ * @apiParam {String} :trackId Track's id.
+ *
+ * @apiSuccess {Object} data Collection of album.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/albums/:albumId/tracks/:trackId
+ */
+router.delete('/:albumId(\\w{24})/tracks/:trackId(\\w{24})', (req, res) => {
+  Album.getAlbum(req.params.albumId).then(album => {
+    if (!album) {
+      throw {
+        'code': 400,
+        'response': new Response.Error(new Err.ResourceNotFound(['album not found']))
+      };
+    }
+    return album;
+  }).then(album => {
+    return Track.getTrack(req.params.trackId).then(track => {
+      if (!track) {
+        throw {
+          'code': 400,
+          'response': new Response.Error(new Err.ResourceNotFound(['track not found']))
+        };
+      }
+
+      track.album = null;
+      _.remove(album.tracks, o => {
+        return o._id == track._id.toHexString();
+      });
+      return track.save().then(() => {
+        return album;
+      });
+    });
+  }).then(album => {
+    album.save().then((album) => {
+      res.send(new Response.Data(album));
+    });
+  }).catch(ex => {
+    res.status(ex.code)
+      .send(ex.response);
+  });
+});
 
 /**
  * @api {post} /albums/:id/tracks Create relationship between specific album and multiple tracks.
@@ -413,40 +461,7 @@ router.post('/:id(\\w{24})/tracks', (req, res) => {
   });
 });
 
-/**
- * @api {delete} /albums/:albumId/tracks/:trackId Remove relationship between specific album and track.
- * @apiName AlbumSetTrack
- * @apiGroup Albums
- *
- * @apiParam {String} :albumId Album's id.
- * @apiParam {String} :trackId Track's id.
- *
- * @apiSuccess {Object} data Collection of album.
- *
- * @apiSampleRequest http://localhost:3000/api/v1/albums/:albumId/tracks/:trackId
- */
-router.delete('/:albumId(\\w{24}/tracks/:trackId)', (req, res) => {
-  Album.getAlbum(req.params.albumId).then(album => {
-    if (!album) {
-      res.status(400)
-        .send(new Response.Error(new Err.ResourceNotFound(['album not found'])));
-    } else {
-      Track.getTrack(req.params.trackId).then(track => {
-        if (track) {
-          track.album = null;
-        }
 
-        _.remove(album.tracks, (o) => {
-          return o._id.equals(track._id);
-        });
-
-        Promise.all([album.save(), track.save()]).then(result => {
-          res.send(new Response.Data(album));
-        });
-      });
-    }
-  });
-});
 
 router.get('*', (req, res) => {
   res.status(404).send(new Response.Error(new Err.ResourceNotFound()));

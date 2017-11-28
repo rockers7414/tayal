@@ -5,6 +5,7 @@ const request = require('supertest');
 const app = require('../src/server.js')
 const Album = require('../src/modules/album')
 const Artist = require('../src/modules/artist')
+const Track = require('../src/modules/track')
 const _ = require('lodash');
 
 const Database = require('../src/lib/database')
@@ -61,7 +62,6 @@ describe('Album Test', () => {
         .expect('Content-Type', /json/)
         .end((err, res) => {
           if (err) {
-            console.log(err);
             return done(err);
           }
 
@@ -79,7 +79,6 @@ describe('Album Test', () => {
         .expect('Content-Type', /json/)
         .end((err, res) => {
           if (err) {
-            console.log(err);
             return done(err);
           }
 
@@ -106,7 +105,6 @@ describe('Album Test', () => {
             done();
           });
         }).catch(err => {
-          console.log(err);
           done(err);
         });
     });
@@ -153,7 +151,6 @@ describe('Album Test', () => {
             done();
           });
         }).catch(err => {
-          console.log(err);
           done(err);
         });
     });
@@ -199,7 +196,58 @@ describe('Album Test', () => {
           });
         })
         .catch(err => {
-          console.log(err);
+          done(err);
+        });
+    });
+  });
+
+  describe('#AlbumDeleteTrack', () => {
+    var tmpTrack = null;
+    var tmpAlbum = null;
+
+    before(() => {
+      return new Album('Perfect Strangers II', null, [], null).save().then((_album) => {
+        tmpAlbum = _album;
+        return _album;
+      }).then(_album => {
+        new Track(_album.toSimple(), 1, 'Happy', 'lyric-lyric').save().then(_track => {
+          tmpTrack = _track;
+          return Album.getAlbum(_album._id).then(albumObj => {
+            albumObj.tracks.push(tmpTrack.toSimple());
+            return albumObj.save();
+          });
+        });
+      });
+    });
+
+    after(() => {
+      return Track.deleteTrack(tmpTrack._id).then(() => {
+        return Album.deleteAlbum(tmpAlbum._id);
+      });
+    });
+
+    it('should respond album without specific track', (done) => {
+      request(app)
+        .delete('/api/v1/albums/' + tmpAlbum._id + /tracks/ + tmpTrack._id)
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .then(res => {
+          res.body.data._id.should.equal(tmpAlbum._id);
+          var targetTrack = _.find(res.body.data.tracks, o => {
+            return o._id == tmpTrack._id;
+          });
+          (targetTrack == null).should.be.ok();
+        })
+        .then(res => {
+          return Album.getAlbum(tmpAlbum._id).then(_album => {
+            var targetTrack = _.find(tmpAlbum.tracks, o => {
+              return o._id == tmpTrack._id;
+            });
+            (targetTrack == null).should.be.ok();
+            done();
+          });
+        })
+        .catch(err => {
           done(err);
         });
     });
