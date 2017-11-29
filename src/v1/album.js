@@ -89,33 +89,11 @@ router.delete('/:id(\\w{24})', (req, res) => {
       throw { 'code': 200, 'response': new Response.Data(true) };
     }
     return album;
-  }).then(album => {
-    if (album.tracks && album.tracks.length > 0) {
-      throw {
-        'code': 400,
-        'response': new Response.Error(new Err.UnremovableError('has related tracks'))
-      };
-
-    }
-    return album;
-  }).then(album => {
-    if (album.artist) {
-      return Artist.getArtist(album.artist._id).then(artist => {
-        if (artist.albums) {
-          _.remove(artist.albums, (_album) => {
-            return _album._id == album._id;
-          });
-          return artist.save().then(() => {
-            return album;
-          });
-        }
-        return album;
-      });
-    }
-    return album;
-  }).then(album => {
-    Album.deleteAlbum(album._id.toHexString()).then(result => {
+  }).then(() => {
+    Album.deleteAlbum(req.params.id).then(result => {
       res.send(new Response.Data(result));
+    }).catch(err => {
+      throw { 'code': 400, 'response': Response.Error(err) };
     });
   }).catch(ex => {
     res.status(ex.code)

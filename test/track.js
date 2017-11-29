@@ -33,6 +33,7 @@ describe('Track Web API Test', () => {
   });
 
   describe('#Tracks Web API', () => {
+
     it('should respond with JSON array', (done) => {
       request(app)
         .get('/api/v1/tracks/')
@@ -82,7 +83,6 @@ describe('Track Web API Test', () => {
     });
 
     it('delete records and respond true', (done) => {
-      console.log(track);
       request(app)
         .delete('/api/v1/tracks/' + track._id)
         .expect(200)
@@ -93,5 +93,4 @@ describe('Track Web API Test', () => {
         });
     });
   });
-
 });

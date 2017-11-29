@@ -1,11 +1,7 @@
 const router = require('express').Router();
-
 const Response = require('../objects/response');
 const Err = require('../objects/error');
-const _ = require('lodash');
-
 const Track = require('../modules/track');
-const Album = require('../modules/album');
 
 /**
  * @api {get} /tracks Get page of tracks.
@@ -72,7 +68,7 @@ router.post('/', (req, res) => {
 });
 
 /**
- * @api {put} /tracks/:id Update specify track info.
+ * @api {put} /tracks/:id Update specific track info.
  * @apiName UpdateTrack
  * @apiGroup Tracks
  *
@@ -92,51 +88,27 @@ router.put('/:id(\\w{24})', (req, res) => {
   } else {
     Track.getTrack(req.params.id).then(track => {
       if (!track) {
-        return res.status(400)
-          .send(new Response.Error(new Err.ResourceNotFound(['track not found'])));
+        throw {
+          'code': 400,
+          'response': new Response.Error(new Err.ResourceNotFound(['track not found']))
+        };
       }
 
       track.name = req.body.name;
       track.lyric = req.body.lyric;
-
-      var promiseList = [];
-      if (track.album) {
-        if (!req.body.trackNumber || req.body.trackNumber == '') {
-          return res.status(400)
-            .send(new Response.Error(new Err.InvalidParam(['trackNumber is required'])));
-        }
-
-        promiseList.push(
-          Album.getAlbum(track.album._id).then(album => {
-            const targetTrackNumber = _.find(album.tracks, (o) => {
-              return o.trackNumber == req.body.trackNumber;
-            });
-
-            if (targetTrackNumber) {
-              return res.status(400)
-                .send(new Response.Error(new Err.IllegalOperationError(['track number duplicate'])));
-            } else {
-              _.remove(album.tracks, (o) => {
-                return o.track._id.toHexString() == req.params.id;
-              });
-              album.tracks.push(track.toSimple());
-              return album.save();
-            }
-          })
-        );
-      }
       track.trackNumber = req.body.trackNumber;
-      promiseList.push(track.save());
-
-      Promise.all(promiseList).then(() => {
-        res.status(200).send(new Response.Data(track));
-      });
+      return track.save();
+    }).then(track => {
+      res.send(new Response.Data(track));
+    }).catch(ex => {
+      res.status(ex.code)
+        .send(ex.response);
     });
   }
 });
 
 /**
- * @api {delete} /tracks/:id Delete specify track.
+ * @api {delete} /tracks/:id Delete specific track.
  * @apiName DeleteTrack
  * @apiGroup Tracks
  *
@@ -147,36 +119,13 @@ router.put('/:id(\\w{24})', (req, res) => {
  * @apiSampleRequest http://localhost:3000/api/v1/tracks/:id
  */
 router.delete('/:id(\\w{24})', (req, res) => {
-
   Track.getTrack(req.params.id).then(track => {
     if (!track) {
       res.status(400)
         .send(new Response.Error(new Err.InvalidParam(['track not found'])));
     } else {
-      var promiseList = [];
-
-      if (track.album) {
-        promiseList.push(
-          Album.getAlbum(track.album._id).then(album => {
-            _.remove(album.tracks, (o) => {
-              return o._id.equals(track._id);
-            });
-            return album.save();
-          })
-        );
-      }
-
-      promiseList.push(
-        Track.deleteTrack(req.params.id)
-      );
-
-      Promise.all(promiseList).then(() => {
-        res.send(new Response.Data(true));
-      }).catch(err => {
-        if (err instanceof Err.UnremovableError) {
-          res.status(400);
-        }
-        res.send(new Response.Error(err));
+      Track.deleteTrack(req.params.id).then(result => {
+        res.send(new Response.Data(result));
       });
     }
   });
