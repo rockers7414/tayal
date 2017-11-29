@@ -2,6 +2,8 @@
 const Database = require('../lib/database');
 const ObjectID = require('mongodb').ObjectID;
 const Page = require('../objects/page');
+const Album = require('./album');
+const _ = require('lodash');
 
 class Track {
 
@@ -41,7 +43,7 @@ class Track {
       });
   }
 
-  static getTracksById(idArray) {
+  static getTracksByIds(idArray) {
     return Database.getCollection('tracks')
       .then(collection => {
         /** refactor idArray */
@@ -66,12 +68,23 @@ class Track {
   }
 
   static deleteTrack(id) {
-    return Database.getCollection('tracks')
-      .then(collection => {
-        return collection.deleteOne({ _id: new ObjectID(id) });
-      }).then(result => {
-        return result.deletedCount == 1;
-      });
+    return Track.getTrack(id).then(track => {
+      if (track.album) {
+        Album.getAlbum(track.album._id).then(album => {
+          _.remove(album.tracks, o => {
+            return o._id == track._id.toHexString();
+          });
+          return album.save();
+        });
+      }
+    }).then(() => {
+      return Database.getCollection('tracks')
+        .then(collection => {
+          return collection.deleteOne({ _id: new ObjectID(id) });
+        }).then(result => {
+          return result.deletedCount == 1;
+        });
+    });
   }
 
   constructor(album, trackNumber, name, lyric) {

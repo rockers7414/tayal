@@ -3,7 +3,7 @@ const Database = require('../lib/database');
 const ObjectID = require('mongodb').ObjectID;
 const Page = require('../objects/page');
 const Error = require('../objects/error');
-const Artist = require('./Artist');
+const Artist = require('./artist');
 const _ = require('lodash');
 
 class Album {

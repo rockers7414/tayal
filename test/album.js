@@ -201,6 +201,71 @@ describe('Album Test', () => {
     });
   });
 
+  describe('#AlbumSetTracks', () => {
+    var tmpAlbum = null;
+    var tracksArray = [];
+
+    before(() => {
+      return new Album('Perfect Strangers II', null, [], null).save().then((_album) => {
+        tmpAlbum = _album;
+        return _album;
+      }).then(_album => {
+        new Track(null, 1, 'Happy', 'lyric-lyric').save().then(_track => {
+          tracksArray.push(_track);
+        }).then(() => {
+          new Track(null, 2, 'Sad', 'lyric-lyric-Sad').save().then(_track => {
+            tracksArray.push(_track);
+          });
+        });
+      });
+    });
+
+    after(() => {
+      return Track.deleteTrack(tracksArray[0]._id).then(() => {
+        return Track.deleteTrack(tracksArray[1]._id);
+      }).then(() => {
+        Album.deleteAlbum(tmpAlbum._id);
+      });
+    });
+
+    it('should respond album with tracks which just post', (done) => {
+      var idArrays = [];
+      tracksArray.forEach(_track => {
+        idArrays.push(_track._id);
+      });
+
+      request(app)
+        .post('/api/v1/albums/' + tmpAlbum._id + '/tracks')
+        .send({
+          "tracks": idArrays
+        })
+        .expect(200)
+        .expect('Content-Type', /json/)
+        .then(res => {
+          res.body.data._id.should.equal(tmpAlbum._id);
+          res.body.data.tracks.length.should.equal(2);
+          var firstTrack = _.find(res.body.data.tracks, o => {
+            return o._id == tracksArray[0]._id;
+          });
+          firstTrack.trackNumber.should.equal(1);
+          firstTrack.name.should.equal('Happy');
+          firstTrack._id.should.equal(idArrays[0]);
+
+          var secondTrack = _.find(res.body.data.tracks, o => {
+            return o._id == tracksArray[1]._id;
+          });
+          secondTrack.trackNumber.should.equal(2);
+          secondTrack.name.should.equal('Sad');
+          secondTrack._id.should.equal(idArrays[1]);
+          done();
+        })
+        .catch(err => {
+          done(err);
+        });
+    });
+
+  });
+
   describe('#AlbumDeleteTrack', () => {
     var tmpTrack = null;
     var tmpAlbum = null;
