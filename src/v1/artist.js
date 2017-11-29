@@ -1,10 +1,7 @@
 const router = require('express').Router();
-
 const Response = require('../objects/response');
 const Err = require('../objects/error');
-
 const Artist = require('../modules/artist');
-const Album = require('../modules/album');
 
 /**
  * @api {get} /artists Get page of artists.
