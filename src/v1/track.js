@@ -61,7 +61,7 @@ router.post('/', (req, res) => {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
   } else {
-    new Track(null, null, req.body.name, null).save().then(track => {
+    new Track(null, req.body.trackNumber, req.body.name, req.body.lyric).save().then(track => {
       res.status(200).send(new Response.Data(track));
     });
   }
