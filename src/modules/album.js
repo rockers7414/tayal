@@ -3,6 +3,8 @@ const Database = require('../lib/database');
 const ObjectID = require('mongodb').ObjectID;
 const Page = require('../objects/page');
 const Error = require('../objects/error');
+const Artist = require('./artist');
+const _ = require('lodash');
 
 class Album {
   static getAlbums(index = 0, offset = 50) {
@@ -44,10 +46,23 @@ class Album {
 
   static deleteAlbum(id) {
     return Album.getAlbum(id).then(album => {
-      if (album.tracks.lengh > 0) {
+      if (album && album.tracks.lengh > 0) {
         throw new Error.UnremoveableError('has related tracks');
       }
-
+      return album;
+    }).then(album => {
+      if (album && album.artist) {
+        return Artist.getArtist(album.artist._id).then(artist => {
+          _.remove(artist.albums, (o) => {
+            return o._id == id;
+          });
+          return artist.save().then(() => {
+            return album;
+          });
+        });
+      }
+      return album;
+    }).then(() => {
       return Database.getCollection('albums')
         .then(collection => {
           return collection.deleteOne({ _id: new ObjectID(id) });

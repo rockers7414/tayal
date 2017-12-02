@@ -19,8 +19,8 @@ class Collection extends Response {
 }
 
 class Data extends Response {
-  constructor(data) {
-    super(data, null);
+  constructor(data, error = null) {
+    super(data, error);
 
     this.type = 'single';
   }

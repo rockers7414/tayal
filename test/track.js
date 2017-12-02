@@ -2,13 +2,12 @@ const assert = require('assert');
 const should = require('should');
 const request = require('supertest');
 
-const app = require('../src/server.js')
-const Track = require('../src/modules/Track')
+const app = require('../src/server.js');
+const Track = require('../src/modules/Track');
 
-const Database = require('../src/lib/database')
+const Database = require('../src/lib/database');
 
-describe('Track Test', () => {
-
+describe('Track Web API Test', () => {
   var track = null;
 
   before(() => {
@@ -17,7 +16,7 @@ describe('Track Test', () => {
     });
   });
 
-  after(function() {
+  after(() => {
     app.close(() => {
       Database.close();
     });
@@ -34,6 +33,7 @@ describe('Track Test', () => {
   });
 
   describe('#Tracks Web API', () => {
+
     it('should respond with JSON array', (done) => {
       request(app)
         .get('/api/v1/tracks/')
@@ -93,5 +93,4 @@ describe('Track Test', () => {
         });
     });
   });
-
 });
