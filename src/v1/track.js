@@ -61,7 +61,7 @@ router.post('/', (req, res) => {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
   } else {
-    new Track(null, req.body.trackNumber, req.body.name, req.body.lyric).save().then(track => {
+    new Track(null, req.body.trackNumber, req.body.name, req.body.lyric, req.body.link).save().then(track => {
       res.status(200).send(new Response.Data(track));
     });
   }
@@ -97,6 +97,7 @@ router.put('/:id(\\w{24})', (req, res) => {
       track.name = req.body.name;
       track.lyric = req.body.lyric;
       track.trackNumber = req.body.trackNumber;
+      track.link = req.body.link;
       return track.save();
     }).then(track => {
       res.send(new Response.Data(track));
