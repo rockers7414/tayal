@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Response = require('../objects/response');
 const Err = require('../objects/error');
 const Artist = require('../modules/artist');
+const _ = require('lodash');
 
 /**
  * @api {get} /artists Get page of artists.
@@ -32,20 +33,45 @@ router.get('/', (req, res) => {
  * @apiName PostArtist
  * @apiGroup Artists
  *
- * @apiParam {String} name Artist's name.
+ * @apiHeader {String} Content-Type=application/json Content-Type
  *
- * @apiSuccess {Object} data Collection of artist.
+ * @apiParam {String} name     Artist's name.
+ * @apiParam {Object} [tag={}] The source of artist.
+ *
+ * @apiParamExample {json} Request-Example:
+ *     {
+ *       "name":"Ed Sheeran",
+ *       "tag": {
+ *         "spotify": "6eUKZXaKkcviH0Ku9w2n3V"
+ *       }
+ *     }
+ *
+ * @apiSuccess {Object} data The new artist's instance.
  *
  * @apiSampleRequest http://localhost:3000/api/v1/artists
  */
-router.post('/', (req, res) => {
-  if (!req.body.name || req.body.name == '') {
+router.post('/', async (req, res) => {
+  const name = req.body.name || '';
+  const tag = req.body.tag || {};
+
+  if (name === '') {
     res.status(400)
       .send(new Response.Error(new Err.InvalidParam(['name is required'])));
+    return;
   }
-  new Artist(req.body.name).save().then(artist => {
+
+  let artist = null;
+
+  if (!_.isEmpty(tag)) {
+    artist = await Artist.getArtistByNameTag(name, tag);
+  }
+
+  if (artist) {
     res.status(200).send(new Response.Data(artist));
-  });
+  } else {
+    artist = await new Artist(name, tag).save();
+    res.status(200).send(new Response.Data(artist));
+  }
 });
 
 /**
