@@ -38,6 +38,25 @@ class Artist {
       });
   }
 
+  static getArtistByNameTag(name, tag) {
+    return Database.getCollection('artists')
+      .then(collection => {
+        return collection.findOne({
+          name: name,
+          tag: tag
+        });
+      })
+      .then(data => {
+        if (!data) {
+          return null;
+        }
+
+        const artist = new Artist(data.name, data.tag, data.albums, data.images);
+        artist._id = data._id;
+        return artist;
+      });
+  }
+
   static deleteArtist(id) {
     return Artist.getArtist(id).then(artist => {
       if (artist.albums.length > 0) {
@@ -50,8 +69,9 @@ class Artist {
     });
   }
 
-  constructor(name, albums = [], images = []) {
+  constructor(name, tag, albums = [], images = []) {
     this.name = name;
+    this.tag = tag;
     this.albums = albums;
     this.images = images;
   }

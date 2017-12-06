@@ -1,1 +1,1 @@
-define({  "name": "tayal",  "version": "1.0.0",  "description": "",  "sampleUrl": false,  "defaultVersion": "0.0.0",  "apidoc": "0.3.0",  "generator": {    "name": "apidoc",    "time": "2017-11-20T15:54:27.281Z",    "url": "http://apidocjs.com",    "version": "0.17.6"  }});
+define({  "name": "tayal",  "version": "1.0.0",  "description": "",  "sampleUrl": false,  "defaultVersion": "0.0.0",  "apidoc": "0.3.0",  "generator": {    "name": "apidoc",    "time": "2017-12-05T16:31:24.782Z",    "url": "http://apidocjs.com",    "version": "0.17.6"  }});
