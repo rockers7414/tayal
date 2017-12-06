@@ -18,7 +18,7 @@ class Track {
               }
 
               const tracks = data.map(data => {
-                const track = new Track(data.album, data.trackNumber, data.name, data.lyric);
+                const track = new Track(data.album, data.trackNumber, data.name, data.lyric, data.link);
                 track._id = data._id;
                 return track;
               });
@@ -37,7 +37,7 @@ class Track {
       }).then(data => {
         if (!data)
           return null;
-        const track = new Track(data.album, data.trackNumber, data.name, data.lyric);
+        const track = new Track(data.album, data.trackNumber, data.name, data.lyric, data.link);
         track._id = data._id;
         return track;
       });
@@ -56,7 +56,7 @@ class Track {
         return cursor.toArray().then(dataArray => {
           var result = [];
           dataArray.forEach(data => {
-            var track = new Track(data.album, data.trackNumber, data.name, data.lyric);
+            var track = new Track(data.album, data.trackNumber, data.name, data.lyric, data.link);
             track._id = data._id;
             result.push(track);
           });
@@ -87,11 +87,12 @@ class Track {
     });
   }
 
-  constructor(album, trackNumber, name, lyric) {
+  constructor(album, trackNumber, name, lyric, link) {
     this.album = album;
     this.trackNumber = trackNumber;
     this.name = name;
     this.lyric = lyric;
+    this.link = link;
   }
 
   save() {
