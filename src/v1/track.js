@@ -46,6 +46,28 @@ router.get('/:id(\\w{24})', (req, res) => {
 });
 
 /**
+ * @api {get} /tracks/keyword/:keyword Get tracks searching on the name of the field with given keyword.
+ * @apiName GetTracksByKeyword
+ * @apiGroup Tracks
+ *
+ * @apiParam {String} :keyword keyword
+ *
+ * @apiSuccess {Object} data Collection of tracks.
+ *
+ * @apiSampleRequest http://localhost:3000/api/v1/tracks/keyword/:keyword
+ */
+router.get('/keyword/:keyword', (req, res) => {
+  if (!req.params.keyword || req.params.keyword == '') {
+    return res.status(400)
+      .send(new Response.Error(new Err.InvalidParam(['keyword is required'])));
+  }
+
+  Track.getTracksByKeyword(req.params.keyword).then(tracks => {
+    res.status(200).send(new Response.Data(tracks));
+  });
+});
+
+/**
  * @api {post} /tracks Create new track.
  * @apiName PostTrack
  * @apiGroup Tracks
