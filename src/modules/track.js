@@ -43,6 +43,31 @@ class Track {
       });
   }
 
+  /**
+   * Using keyword to search on the content of the field with a "text index", so we must create index first, otherwise not work.
+   */
+  static getTracksByKeyword(keyword) {
+    return Database.getCollection('tracks')
+      .then(collection => {
+        return collection.find({
+          name: {
+            $regex: new RegExp(keyword),
+            $options: 'is'
+          }
+        }).limit(10);
+      }).then(cursor => {
+        return cursor.toArray().then(dataArray => {
+          var result = [];
+          dataArray.forEach(data => {
+            var track = new Track(data.album, data.trackNumber, data.name, data.lyric, data.link);
+            track._id = data._id;
+            result.push(track);
+          });
+          return result;
+        });
+      });
+  }
+
   static getTracksByIds(idArray) {
     return Database.getCollection('tracks')
       .then(collection => {
@@ -62,8 +87,6 @@ class Track {
           });
           return result;
         });
-      }).catch(error => {
-        console.log(error);
       });
   }
 
