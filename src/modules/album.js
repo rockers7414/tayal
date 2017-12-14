@@ -30,6 +30,31 @@ class Album {
       });
   }
 
+  /**
+   * Using keyword to search on the content of the field with a "text index", so we must create index first, otherwise not work.
+   */
+  static getAlbumsByKeyword(keyword) {
+    return Database.getCollection('albums')
+      .then(collection => {
+        return collection.find({
+          name: {
+            $regex: new RegExp(keyword),
+            $options: 'is'
+          }
+        }).limit(10);
+      }).then(cursor => {
+        return cursor.toArray().then(dataArray => {
+          var result = [];
+          dataArray.forEach(data => {
+            const album = new Album(data.name, data.artist, data.tracks, data.images);
+            album._id = data._id;
+            result.push(album);
+          });
+          return result;
+        });
+      });
+  }
+
   static getAlbum(id) {
     return Database.getCollection('albums')
       .then(collection => {

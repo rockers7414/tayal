@@ -51,6 +51,20 @@ router.get('/:id(\\w{24})', (req, res) => {
 });
 
 /**
+ *  @api {get} /albums/keyword/:keyword Get albums, searching on the name of field with given keyword.
+ */
+router.get('/keyword/:keyword', (req, res) => {
+  if (!req.params.keyword || req.params.keyword == '') {
+    return res.status(400)
+      .send(new Response.Error(new Err.InvalidParam(['keyword is required'])));
+  }
+
+  Album.getAlbumsByKeyword(req.params.keyword).then(albums => {
+    res.status(200).send(new Response.Data(albums));
+  });
+});
+
+/**
  * @api {post} /albums Create new album.
  * @apiName PostAlbum
  * @apiGroup Albums
