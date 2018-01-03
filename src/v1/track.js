@@ -46,7 +46,7 @@ router.get('/:id(\\w{24})', (req, res) => {
 });
 
 /**
- * @api {get} /tracks/keyword/:keyword Get tracks searching on the name of the field with given keyword.
+ * @api {get} /tracks/keyword/:keyword Get tracks, searching on the name of the field with given keyword.
  * @apiName GetTracksByKeyword
  * @apiGroup Tracks
  *
