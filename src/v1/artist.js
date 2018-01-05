@@ -66,12 +66,11 @@ router.post('/', async (req, res) => {
     artist = await Artist.getArtistByNameTag(name, tag);
   }
 
-  if (artist) {
-    res.status(200).send(new Response.Data(artist));
-  } else {
+  if(!artist) {
     artist = await new Artist(name, tag).save();
-    res.status(200).send(new Response.Data(artist));
   }
+
+  res.status(200).send(new Response.Data(artist));
 });
 
 /**
